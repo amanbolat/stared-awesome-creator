@@ -1,7 +1,7 @@
 ## About
 This is a small script that runs on AWS Lambda every **{{ interval }}**.
 
-Logic:
+## Logic:
 - Download awesome lists
 - Loop through them
 - Remove some parts
