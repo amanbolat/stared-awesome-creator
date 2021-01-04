@@ -1,4 +1,4 @@
-package mdrender
+package markdown
 
 import (
 	"bytes"

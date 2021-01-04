@@ -27,7 +27,6 @@ func handler(_ context.Context, _ events.CloudWatchEvent)  {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-
 	db := dynamo.New(sess, &aws.Config{Region: aws.String("us-west-2")})
 
 	// Process awesome lists

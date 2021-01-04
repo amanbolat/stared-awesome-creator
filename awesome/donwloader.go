@@ -42,11 +42,11 @@ func (d *Downloader) DownloadLists() <-chan AwesomeList {
 			}
 
 			resChan <- AwesomeList{
-				Name:           list.Name,
-				ReadmeURL:      list.ReadmeURL,
-				UploadRepoName: list.UploadRepoName,
-				ReadmeBody:     b,
-				About:          list.About,
+				Name:              list.Name,
+				ReadmeURL:         list.ReadmeURL,
+				RepoToUpload:      list.RepoToUpload,
+				ReadmeBody:        b,
+				About:             list.About,
 				RemoveUnusedParts: list.RemoveUnusedParts,
 			}
 			wg.Done()

@@ -1,5 +1,5 @@
 // Package renderer renders the given AST to certain formats.
-package mdrender
+package markdown
 
 import (
 	"bytes"

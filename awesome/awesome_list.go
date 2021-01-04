@@ -11,19 +11,19 @@ type AwesomeList struct {
 	// ReadmeURL is the link to awesome list's raw
 	// readme file
 	ReadmeURL string
-	// UploadRepoName is my repo to upload links
+	// RepoToUpload is my repo to upload links
 	// awesome list file
-	UploadRepoName string
-	ReadmeBody     []byte
-	About          string
+	RepoToUpload      string
+	ReadmeBody        []byte
+	About             string
 	RemoveUnusedParts ModifyMarkdownFunc
 }
 
 var awesomeLists = []AwesomeList{
 	{
-		Name:           "Awesome Go",
-		ReadmeURL:      "https://raw.githubusercontent.com/avelino/awesome-go/master/README.md",
-		UploadRepoName: "awesome-go-with-stars",
+		Name:         "Awesome Go",
+		ReadmeURL:    "https://raw.githubusercontent.com/avelino/awesome-go/master/README.md",
+		RepoToUpload: "awesome-go-with-stars",
 		About: `
 # About
 This repository is a clone of [Awesome Go](https://github.com/avelino/awesome-go) but with stars.
