@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func handler(_ context.Context, _ events.CloudWatchEvent)  {
+func run()  {
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	if githubToken == "" {
 		logrus.Fatal("GITHUB_TOKEN is not provided")
@@ -44,6 +44,15 @@ func handler(_ context.Context, _ events.CloudWatchEvent)  {
 	}
 }
 
+func handler(_ context.Context, _ events.CloudWatchEvent)  {
+	run()
+}
+
 func main() {
-	lambda.Start(handler)
+	lambdaEnv := os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
+	if lambdaEnv == "" {
+		run()
+	} else {
+		lambda.Start(handler)
+	}
 }

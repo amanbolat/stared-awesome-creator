@@ -21,7 +21,6 @@ const repoOwner = "amanbolat"
 const defaultRepoBranch = "main"
 const repoReadmeFile = "README.md"
 const starCacheTable = "awesome_list_stars"
-const githubHostName = "github.com"
 
 // Manager is responsible for whole process of updating awesome lists
 // with stars.
@@ -59,26 +58,6 @@ func (m *Manager) withAboutText(b []byte, rootNode ast.Node, aboutText string) [
 	return buf.Bytes()
 }
 
-// grabLinks finds and returns all the links from Markdown node
-func (m *Manager) grabLinks(buf []byte, node ast.Node, links map[ast.Node]*url.URL) {
-	if node.Kind() == ast.KindLink {
-		astLink := node.(*ast.Link)
-		l, ok  := GetRepoValidLink(astLink)
-		if ok {
-			links[l.Node] = l.Url
-		}
-	}
-
-	if node.HasChildren() {
-		m.grabLinks(buf, node.FirstChild(), links)
-		next := node.FirstChild().NextSibling()
-		for next != nil {
-			m.grabLinks(buf, next, links)
-			next = next.NextSibling()
-		}
-	}
-}
-
 func (m *Manager) getLinksStarMap(links map[ast.Node]*url.URL) map[ast.Node]int {
 	res := make(map[ast.Node]int)
 
@@ -111,29 +90,6 @@ func (m *Manager) getLinksStarMap(links map[ast.Node]*url.URL) map[ast.Node]int 
 	return res
 }
 
-func GetRepoValidLink(astLink *ast.Link) (*Link, bool) {
-	if astLink == nil {
-		return nil, false
-	}
-
-	dest := string(astLink.Destination)
-	u, err := url.Parse(dest)
-	if err != nil {
-		return nil, false
-	}
-
-	if u.Hostname() != githubHostName {
-		return nil, false
-	}
-
-	l := &Link{
-		Node: astLink,
-		Url:  u,
-	}
-
-	return l, true
-}
-
 func (m *Manager) StarList(list *awesome.AwesomeList) error {
 	// parse file
 	mdTextReader := text.NewReader(list.ReadmeBody)
@@ -142,12 +98,27 @@ func (m *Manager) StarList(list *awesome.AwesomeList) error {
 
 	// add stars to links
 	links := make(map[ast.Node]*url.URL)
-	m.grabLinks(list.ReadmeBody, rootNode, links)
+	markdown.FindLinks(list.ReadmeBody, rootNode, links)
 	logrus.WithField("list_name", list.Name).WithField("links_found", len(links)).Info("parsed links")
 
 	linkStarMap := m.getLinksStarMap(links)
 	for link, stars := range linkStarMap {
 		markdown.StarLink(link, stars)
+	}
+
+	// sort links by star
+	lists := make(chan *ast.List, 1)
+	go func() {
+		markdown.FindLists(list.ReadmeBody, rootNode, lists)
+		close(lists)
+	}()
+	var listArr []*ast.List
+	for list := range lists {
+		listArr = append(listArr, list)
+	}
+
+	for _, list := range listArr {
+		markdown.SortListItemsByStar(list)
 	}
 
 	// Create new markdown file

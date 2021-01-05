@@ -95,6 +95,7 @@ func (c *Client) GetStarsCountFor(repoUrl *url.URL) (int, error) {
 		"name":  githubv4.String(name),
 	}
 
+
 	err := c.ghGraphClient.Query(context.Background(), &q, args)
 	if err != nil {
 		return -1, fmt.Errorf("unable fetch repo stars, %s", err)
