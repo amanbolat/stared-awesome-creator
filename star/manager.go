@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"stared-awesome-creator/awesome"
+	"stared-awesome-creator/git"
+	"stared-awesome-creator/markdown"
+	"time"
+
 	"github.com/guregu/dynamo"
 	"github.com/sirupsen/logrus"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
 	"golang.org/x/oauth2"
-	"net/url"
-	"stared-awesome-creator/awesome"
-	"stared-awesome-creator/git"
-	"stared-awesome-creator/markdown"
-	"time"
 )
 
 const repoOwner = "amanbolat"
@@ -25,8 +26,8 @@ const starCacheTable = "awesome_list_stars"
 // Manager is responsible for whole process of updating awesome lists
 // with stars.
 type Manager struct {
-	db            *dynamo.DB
-	gitClient     *git.Client
+	db        *dynamo.DB
+	gitClient *git.Client
 }
 
 func NewManager(githubToken string, db *dynamo.DB) *Manager {
@@ -36,8 +37,8 @@ func NewManager(githubToken string, db *dynamo.DB) *Manager {
 	httpClient := oauth2.NewClient(context.Background(), tokenSource)
 	httpClient.Timeout = time.Second * 15
 	m := Manager{
-		db:            db,
-		gitClient:     git.NewClient(githubToken),
+		db:        db,
+		gitClient: git.NewClient(githubToken),
 	}
 
 	return &m
@@ -58,15 +59,23 @@ func (m *Manager) withAboutText(b []byte, rootNode ast.Node, aboutText string) [
 	return buf.Bytes()
 }
 
-func (m *Manager) getLinksStarMap(links map[ast.Node]*url.URL) map[ast.Node]int {
+func (m *Manager) getLinksStarMap(ctx context.Context, links map[ast.Node]*url.URL) (map[ast.Node]int, error) {
 	res := make(map[ast.Node]int)
 
 	for link, repoUrl := range links {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		logrus.WithField("repo_url", repoUrl.String()).Info("getting stars")
+
 		stars, err := m.gitClient.GetStarsCountFor(repoUrl)
 		if err != nil {
 			logrus.WithError(err).WithField("repo_url", repoUrl.String()).Error("unable to get stars from github api")
 			var star Star
-			err = m.db.Table(starCacheTable).Get("repo_url", repoUrl.String()).One(&star)
+			err = m.db.Table(starCacheTable).Get("repo_url", repoUrl.String()).OneWithContext(ctx, &star)
 			if err != nil {
 				logrus.WithError(err).WithField("repo_url", repoUrl.String()).Error("unable to get stars from cache")
 			} else {
@@ -77,7 +86,7 @@ func (m *Manager) getLinksStarMap(links map[ast.Node]*url.URL) map[ast.Node]int 
 				RepoUrl: repoUrl.String(),
 				Stars:   stars,
 			}
-			err = m.db.Table(starCacheTable).Put(&star).Run()
+			err = m.db.Table(starCacheTable).Put(&star).RunWithContext(ctx)
 			if err != nil {
 				logrus.WithError(err).WithField("repo_url", repoUrl.String()).Error("unable to update stars")
 			}
@@ -87,10 +96,10 @@ func (m *Manager) getLinksStarMap(links map[ast.Node]*url.URL) map[ast.Node]int 
 		}
 	}
 
-	return res
+	return res, nil
 }
 
-func (m *Manager) StarList(list *awesome.AwesomeList) error {
+func (m *Manager) StarList(ctx context.Context, list *awesome.AwesomeList) error {
 	// parse file
 	mdTextReader := text.NewReader(list.ReadmeBody)
 	rootNode := goldmark.DefaultParser().Parse(mdTextReader)
@@ -101,7 +110,11 @@ func (m *Manager) StarList(list *awesome.AwesomeList) error {
 	markdown.FindLinks(list.ReadmeBody, rootNode, links)
 	logrus.WithField("list_name", list.Name).WithField("links_found", len(links)).Info("parsed links")
 
-	linkStarMap := m.getLinksStarMap(links)
+	linkStarMap, err := m.getLinksStarMap(ctx, links)
+	if err != nil {
+		return err
+	}
+
 	for link, stars := range linkStarMap {
 		markdown.StarLink(link, stars)
 	}
@@ -112,6 +125,7 @@ func (m *Manager) StarList(list *awesome.AwesomeList) error {
 		markdown.FindLists(list.ReadmeBody, rootNode, lists)
 		close(lists)
 	}()
+
 	var listArr []*ast.List
 	for list := range lists {
 		listArr = append(listArr, list)
@@ -124,7 +138,7 @@ func (m *Manager) StarList(list *awesome.AwesomeList) error {
 	// Create new markdown file
 	tmpBuf := bytes.NewBuffer([]byte{})
 	mdr := markdown.NewRenderer()
-	err := mdr.Render(tmpBuf, list.ReadmeBody, rootNode)
+	err = mdr.Render(tmpBuf, list.ReadmeBody, rootNode)
 	if err != nil {
 		return fmt.Errorf("failed to create updated markdown file, %s", err)
 	}

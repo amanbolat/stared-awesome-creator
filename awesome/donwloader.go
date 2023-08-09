@@ -1,10 +1,12 @@
 package awesome
 
 import (
-	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"context"
+	"io"
 	"net/http"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Downloader struct {
@@ -15,30 +17,37 @@ func NewDownloader(c *http.Client) *Downloader {
 	return &Downloader{httpClient: c}
 }
 
-func (d *Downloader) DownloadLists() <-chan AwesomeList {
+func (d *Downloader) DownloadLists(ctx context.Context) <-chan AwesomeList {
 	downloadedLists := make(chan AwesomeList, 5)
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 
 	for _, list := range awesomeLists {
 		wg.Add(1)
 		go func(list AwesomeList, wg *sync.WaitGroup, resChan chan AwesomeList) {
+			defer wg.Done()
 			logrus.WithField("list_name", list.Name).Info("download started")
-			res, err := d.httpClient.Get(list.ReadmeURL)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, list.ReadmeURL, nil)
 			if err != nil {
-				logrus.WithField("list_name", list.Name).WithError(err).Error("failed to download")
-				wg.Done()
+				logrus.WithError(err).WithField("list_name", list.Name).Error("failed to create request")
+				return
 			}
 
-			b, err := ioutil.ReadAll(res.Body)
+			res, err := d.httpClient.Do(req)
+			if err != nil {
+				logrus.WithField("list_name", list.Name).WithError(err).Error("failed to download")
+				return
+			}
+
+			b, err := io.ReadAll(res.Body)
 			if err != nil {
 				logrus.WithField("list_name", list.Name).WithError(err).Error("failed to read body")
-				wg.Done()
+				return
 			}
 
 			err = res.Body.Close()
 			if err != nil {
 				logrus.Error(err)
-				wg.Done()
+				return
 			}
 
 			resChan <- AwesomeList{
@@ -49,8 +58,7 @@ func (d *Downloader) DownloadLists() <-chan AwesomeList {
 				About:             list.About,
 				RemoveUnusedParts: list.RemoveUnusedParts,
 			}
-			wg.Done()
-		}(list, &wg, downloadedLists)
+		}(list, wg, downloadedLists)
 	}
 
 	go func() {

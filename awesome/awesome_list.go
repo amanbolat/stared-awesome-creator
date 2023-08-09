@@ -40,20 +40,20 @@ run benchmarks.
 ## How?
 This repository is updated every %%interval%% by the script which is/will be run by scheduler. 
 `,
-	RemoveUnusedParts: func(b []byte, rootNode ast.Node) {
-		var toRemove []ast.Node
-		next := rootNode.FirstChild()
-		for {
-			if next.Kind() == ast.KindHeading && string(next.Text(b)) == "Contents" {
-				break
+		RemoveUnusedParts: func(b []byte, rootNode ast.Node) {
+			var toRemove []ast.Node
+			next := rootNode.FirstChild()
+			for {
+				if next.Kind() == ast.KindHeading && string(next.Text(b)) == "Contents" {
+					break
+				}
+				toRemove = append(toRemove, next)
+				next = next.NextSibling()
 			}
-			toRemove = append(toRemove, next)
-			next = next.NextSibling()
-		}
 
-		for _, node := range toRemove {
-			rootNode.RemoveChild(rootNode, node)
-		}
-	},
+			for _, node := range toRemove {
+				rootNode.RemoveChild(rootNode, node)
+			}
+		},
 	},
 }

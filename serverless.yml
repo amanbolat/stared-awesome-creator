@@ -32,4 +32,4 @@ functions:
     handler: bin/app
     reservedConcurrency: 1
     events:
-      - schedule: rate(day)
+      - schedule: "rate(1 day)"

@@ -2,10 +2,11 @@ package markdown
 
 import (
 	"fmt"
-	"github.com/yuin/goldmark/ast"
 	"net/url"
 	"sort"
 	"strings"
+
+	"github.com/yuin/goldmark/ast"
 )
 
 const StarCountAttributeName = "stars"
@@ -13,9 +14,8 @@ const githubHostName = "github.com"
 
 type link struct {
 	Node ast.Node
-	Url *url.URL
+	Url  *url.URL
 }
-
 
 // StarLink alters link node and adds star as a text ot its content
 func StarLink(link ast.Node, star int) {
@@ -62,7 +62,7 @@ func IsFirstLinkInLine(link ast.Node) bool {
 	return isFirst
 }
 
-func SortListItemsByStar(list *ast.List)  {
+func SortListItemsByStar(list *ast.List) {
 	children := GetChildren(list)
 	list.RemoveChildren(list)
 
@@ -113,7 +113,6 @@ func FindLinks(buf []byte, node ast.Node, links map[ast.Node]*url.URL) {
 		}
 	}
 }
-
 
 func GetRepoValidLink(astLink *ast.Link) (*link, bool) {
 	if astLink == nil {
