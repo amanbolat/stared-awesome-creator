@@ -27,18 +27,7 @@ var awesomeLists = []AwesomeList{
 		About: `
 # About
 This repository is a clone of [Awesome Go](https://github.com/avelino/awesome-go) but with stars.
-All repositories are still sorted alphabetically.
-
-## Why?
-Some of the viewers might be against this idea because "stars don't mean anything" or "stars != code quality".
-Yet stars are about numbers, and numbers talk for themselves. First of all, stars may help some newcomers who 
-are not familiar with %%programming_language%% ecosystem and want to find some good framework for the first project. 
-This list will help them to find a few popular web-frameworks, libraries or tools for a quick start. Secondly, people like me 
-might often use a such list of projects to find something trending or they just want to find similar libraries to 
-run benchmarks.
-
-## How?
-This repository is updated every %%interval%% by the script which is/will be run by scheduler. 
+All repositories are sorted by star count. Stars are updated every day automatically.
 `,
 		RemoveUnusedParts: func(b []byte, rootNode ast.Node) {
 			var toRemove []ast.Node

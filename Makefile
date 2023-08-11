@@ -5,7 +5,7 @@ mod:
 
 .PHONY: build
 build:
-	env GOOS=linux go build -ldflags="-s -w" -o bin/app function/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/app function/main.go
 
 .PHONY: clean
 clean:
