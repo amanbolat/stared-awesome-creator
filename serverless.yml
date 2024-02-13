@@ -1,4 +1,5 @@
 service: stared-awesome-creator
+frameworkVersion: ^3.34.0"
 
 package:
   exclude:
