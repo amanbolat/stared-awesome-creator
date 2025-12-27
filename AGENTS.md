@@ -33,6 +33,7 @@ go fmt ./...    # Format code with gofmt
 - Recent commits use short, imperative summaries; some follow conventional prefixes (e.g., `chore:`).
 - Use concise commit messages that explain intent (e.g., `fix: handle empty list`).
 - Commit changes frequently, keeping each commit focused and incremental.
+- Run `npm run build` before each commit to ensure changes compile.
 - PRs should include a clear description, testing notes, and any relevant logs/screenshots for behavior changes.
 
 ## Configuration and Secrets
