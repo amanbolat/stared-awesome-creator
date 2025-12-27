@@ -71,15 +71,25 @@ export class GitHubClient {
   }
 
   async updateFile(ref: GitHubFileRef, content: string, message: string): Promise<void> {
-    const existing = await this.rest.repos.getContent({
-      owner: ref.owner,
-      repo: ref.repo,
-      path: ref.path,
-      ref: ref.branch
-    });
+    let sha: string | undefined;
 
-    if (Array.isArray(existing.data) || existing.data.type !== "file") {
-      throw new Error(`Expected file at ${ref.owner}/${ref.repo}:${ref.path}`);
+    try {
+      const existing = await this.rest.repos.getContent({
+        owner: ref.owner,
+        repo: ref.repo,
+        path: ref.path,
+        ref: ref.branch
+      });
+
+      if (Array.isArray(existing.data) || existing.data.type !== "file") {
+        throw new Error(`Expected file at ${ref.owner}/${ref.repo}:${ref.path}`);
+      }
+
+      sha = existing.data.sha;
+    } catch (error) {
+      if (!isNotFoundError(error)) {
+        throw error;
+      }
     }
 
     await this.rest.repos.createOrUpdateFileContents({
@@ -88,7 +98,7 @@ export class GitHubClient {
       path: ref.path,
       message,
       content: Buffer.from(content, "utf-8").toString("base64"),
-      sha: existing.data.sha,
+      sha,
       branch: ref.branch
     });
   }
@@ -141,4 +151,11 @@ export class GitHubClient {
 
     return { stars, rateLimit };
   }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  return "status" in error && (error as { status?: number }).status === 404;
 }
