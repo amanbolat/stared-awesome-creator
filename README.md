@@ -17,9 +17,11 @@ This service fetches awesome list README files, parses GitHub repository links, 
 1) Install Node 24, clone the repo, then run:
    - `npm ci`
    - `npm run build`
-2) Create `/etc/stared-awesome-creator.env` with a GitHub PAT:
-   - `GITHUB_TOKEN=ghp_...`
-   - Optional: `STAR_CACHE_PATH=/var/lib/stared-awesome-creator/stars.db`
+2) Provide a GitHub PAT:
+   - Either export `GITHUB_TOKEN=ghp_...` before running the deploy script, or
+   - Create `/etc/stared-awesome-creator.env` with:
+     - `GITHUB_TOKEN=ghp_...`
+     - Optional: `STAR_CACHE_PATH=/var/lib/stared-awesome-creator/stars.db`
 3) Add or update list configs in `configs/` (for example `configs/awesome-rust.yml`).
 4) Deploy systemd units for every config:
    - `sudo ./scripts/deploy-systemd.sh`

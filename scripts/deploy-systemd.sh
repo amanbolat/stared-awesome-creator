@@ -34,12 +34,31 @@ fi
 mkdir -p "$DEPLOY_CONFIG_DIR"
 
 if [ ! -f "$ENV_FILE" ]; then
-  cat > "$ENV_FILE" <<'ENV_EOF'
-GITHUB_TOKEN=
-# Optional: STAR_CACHE_PATH=/var/lib/stared-awesome-creator/stars.db
+  if [ -z "${GITHUB_TOKEN:-}" ]; then
+    echo "GITHUB_TOKEN is required (set env var or create $ENV_FILE with it)." >&2
+    exit 1
+  fi
+  mkdir -p "$DEPLOY_DIR"
+  cat > "$ENV_FILE" <<ENV_EOF
+GITHUB_TOKEN=${GITHUB_TOKEN}
 ENV_EOF
+  if [ -n "${STAR_CACHE_PATH:-}" ]; then
+    echo "STAR_CACHE_PATH=${STAR_CACHE_PATH}" >> "$ENV_FILE"
+  fi
   chmod 600 "$ENV_FILE"
-  echo "Created $ENV_FILE. Set GITHUB_TOKEN before running timers." >&2
+else
+  if ! grep -Eq '^GITHUB_TOKEN=.+$' "$ENV_FILE"; then
+    if [ -z "${GITHUB_TOKEN:-}" ]; then
+      echo "GITHUB_TOKEN is required (set env var or update $ENV_FILE)." >&2
+      exit 1
+    fi
+    if grep -q '^GITHUB_TOKEN=' "$ENV_FILE"; then
+      sed -i "s/^GITHUB_TOKEN=.*/GITHUB_TOKEN=${GITHUB_TOKEN}/" "$ENV_FILE"
+    else
+      echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> "$ENV_FILE"
+    fi
+    chmod 600 "$ENV_FILE"
+  fi
 fi
 
 for config_file in "${CONFIG_FILES[@]}"; do
