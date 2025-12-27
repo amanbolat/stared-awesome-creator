@@ -16,23 +16,23 @@ fixtures, with no real GitHub API calls.
 
 ## Tasks
 ### Phase 1: Architecture and scaffolding
-- [ ] Define repo layout and core modules: downloader, parser, renderer, star fetcher,
+- [x] Define repo layout and core modules: downloader, parser, renderer, star fetcher,
       publisher, cache.
-- [ ] Select TS tooling and libraries (tsconfig, lint/format, Node test runner).
-- [ ] Create `config/list.yml` schema (source repo, output repo, parser profile,
+- [x] Select TS tooling and libraries (tsconfig, lint/format, Node test runner).
+- [x] Create `config/list.yml` schema (source repo, output repo, parser profile,
       table options) with default output naming `<source>-with-stars`.
-- [ ] Add config loader/validation and support selecting config path per instance.
+- [x] Add config loader/validation and support selecting config path per instance.
 
 ### Phase 2: Core pipeline and cache
-- [ ] Implement pipeline skeleton and parser registry (code-based registration only).
+- [x] Implement pipeline skeleton and parser registry (code-based registration only).
 - [ ] Build GitHub GraphQL client with batching, concurrency caps, retry/backoff, and
       rate-limit telemetry.
-- [ ] Implement SQLite cache without TTL and safe locking/fallback behavior;
+- [x] Implement SQLite cache without TTL and safe locking/fallback behavior;
       default path in `/var/lib/<app>/cache.db` and env override.
 
 ### Phase 3: Markdown parsing and rendering
-- [ ] Implement parsing/rendering to produce a Markdown table per category.
-- [ ] Define sorting: stars descending.
+- [x] Implement parsing/rendering to produce a Markdown table per category.
+- [x] Define sorting: stars descending.
 - [ ] Add parser profiles for awesome-rust, awesome-zig, awesome-postgres.
 - [ ] Build fixtures for each list format to validate parsing and output.
 
