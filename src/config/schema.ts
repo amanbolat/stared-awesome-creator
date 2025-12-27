@@ -34,13 +34,15 @@ const defaultsSchema = z.object({
   parser: z.string().min(1).optional(),
   parserOptions: parserOptionsSchema.optional(),
   table: tableSchema.optional(),
-  cache: cacheSchema.optional()
+  cache: cacheSchema.optional(),
+  toc: z.boolean().optional()
 });
 
 const listSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).optional(),
   header: z.string().min(1).optional(),
+  toc: z.boolean().optional(),
   source: repoSchema,
   output: repoSchema.partial().optional(),
   parser: z.string().min(1).optional(),

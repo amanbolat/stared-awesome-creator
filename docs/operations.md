@@ -18,6 +18,7 @@ npm run build
 - For multiple lists, create separate config files and service units.
 - Optional: set `defaults.cache.ttlSeconds` to reuse star counts updated within the window (e.g., 3600).
 - Optional: set `list.header` to override the rendered header (supports Markdown).
+- Optional: set `list.toc: true` to render a table of contents based on parsed headings.
 
 ## Secrets
 Create `/etc/stared-awesome-creator.env`:

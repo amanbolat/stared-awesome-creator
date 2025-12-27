@@ -7,9 +7,10 @@ void test("renderList skips empty categories and formats tables", () => {
   const output = renderList({
     title: "Sample",
     categories: [
-      { title: "Empty", items: [] },
+      { title: "Empty", depth: 2, items: [] },
       {
         title: "Tools",
+        depth: 2,
         items: [
           { name: "Repo", url: "https://github.com/example/repo", description: "Useful tool", stars: 42 }
         ]
@@ -29,6 +30,7 @@ void test("renderList uses header override", () => {
     categories: [
       {
         title: "Tools",
+        depth: 2,
         items: [
           { name: "Repo", url: "https://github.com/example/repo", description: "Useful tool", stars: 42 }
         ]
@@ -38,4 +40,31 @@ void test("renderList uses header override", () => {
 
   assert.ok(output.startsWith("# Custom Title"));
   assert.ok(!output.startsWith("# Sample"));
+});
+
+void test("renderList includes a table of contents with nested headings", () => {
+  const output = renderList({
+    title: "Sample",
+    toc: true,
+    categories: [
+      {
+        title: "Applications",
+        depth: 2,
+        items: [
+          { name: "Repo A", url: "https://github.com/example/a", description: "First", stars: 5 }
+        ]
+      },
+      {
+        title: "Audio and Music",
+        depth: 3,
+        items: [
+          { name: "Repo B", url: "https://github.com/example/b", description: "Second", stars: 3 }
+        ]
+      }
+    ]
+  });
+
+  assert.ok(output.includes("## Table of contents"));
+  assert.ok(output.includes("- [Applications](#applications)"));
+  assert.ok(output.includes("  - [Audio and Music](#audio-and-music)"));
 });

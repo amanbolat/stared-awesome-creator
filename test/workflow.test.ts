@@ -88,6 +88,7 @@ void test("workflow fetches source README, stars, and updates destination", asyn
     cache: {
       ttlSeconds: 60 * 60
     },
+    toc: false,
     table: {
       columns: ["stars", "name", "description"],
       sort: "stars_desc"

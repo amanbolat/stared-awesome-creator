@@ -33,7 +33,8 @@ const DEFAULTS: Required<DefaultsConfig> = {
   table: DEFAULT_TABLE,
   cache: {
     ttlSeconds: 60 * 60
-  }
+  },
+  toc: false
 };
 
 export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
@@ -51,7 +52,8 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
     table: parsed.defaults?.table ?? DEFAULTS.table,
     cache: {
       ttlSeconds: parsed.defaults?.cache?.ttlSeconds ?? DEFAULTS.cache.ttlSeconds
-    }
+    },
+    toc: parsed.defaults?.toc ?? DEFAULTS.toc
   };
 
   const list = parsed.list;
@@ -87,7 +89,8 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
     table: list.table ?? mergedDefaults.table,
     cache: {
       ttlSeconds: list.cache?.ttlSeconds ?? mergedDefaults.cache.ttlSeconds
-    }
+    },
+    toc: list.toc ?? mergedDefaults.toc
   };
 
   return {

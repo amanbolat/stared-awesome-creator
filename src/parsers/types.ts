@@ -7,12 +7,14 @@ export type ParsedItem = {
 
 export type ParsedCategory = {
   title: string;
+  depth: number;
   items: ParsedItem[];
 };
 
 export type ParsedList = {
   title?: string;
   header?: string;
+  toc?: boolean;
   categories: ParsedCategory[];
 };
 

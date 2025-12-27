@@ -39,7 +39,7 @@ export const defaultParser: Parser = {
             currentCategory = null;
             continue;
           }
-          currentCategory = { title: text, items: [] };
+          currentCategory = { title: text, depth: heading.depth, items: [] };
           categories.push(currentCategory);
         }
         continue;

@@ -29,6 +29,7 @@ export type ListConfig = {
   table?: TableConfig;
   cache?: CacheConfig;
   header?: string;
+  toc?: boolean;
 };
 
 export type DefaultsConfig = {
@@ -38,6 +39,7 @@ export type DefaultsConfig = {
   parserOptions?: ParserOptions;
   table?: TableConfig;
   cache?: CacheConfig;
+  toc?: boolean;
 };
 
 export type RawConfig = {
@@ -54,6 +56,7 @@ export type ResolvedListConfig = Omit<ListConfig, "output" | "parser" | "parserO
   table: TableConfig;
   cache: CacheConfig;
   header?: string;
+  toc: boolean;
 };
 
 export type ResolvedConfig = {

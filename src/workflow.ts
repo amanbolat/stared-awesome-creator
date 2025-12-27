@@ -43,6 +43,7 @@ export async function runWorkflow(options: WorkflowOptions): Promise<WorkflowRes
   const parsed = parser.parse(markdown, list.parserOptions);
   parsed.title = parsed.title ?? list.name ?? list.id;
   parsed.header = list.header;
+  parsed.toc = list.toc;
 
   const repoRefs: RepoRef[] = [];
   const itemRepoMap = new Map<string, RepoRef>();
