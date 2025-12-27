@@ -48,43 +48,42 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
     table: parsed.defaults?.table ?? DEFAULTS.table
   };
 
-  const lists = parsed.lists.map((list): ResolvedListConfig => {
-    const outputOwner = list.output?.owner ?? mergedDefaults.output.owner;
-    if (!outputOwner) {
-      throw new Error(
-        `Missing output.owner for list ${list.id}. Set defaults.output.owner or list.output.owner.`
-      );
-    }
+  const list = parsed.list;
+  const outputOwner = list.output?.owner ?? mergedDefaults.output.owner;
+  if (!outputOwner) {
+    throw new Error(
+      `Missing output.owner for list ${list.id}. Set defaults.output.owner or list.output.owner.`
+    );
+  }
 
-    const outputRepo =
-      list.output?.repo ?? `${list.source.repo}${mergedDefaults.output.repoSuffix}`;
+  const outputRepo =
+    list.output?.repo ?? `${list.source.repo}${mergedDefaults.output.repoSuffix}`;
 
-    return {
-      id: list.id,
-      name: list.name,
-      source: {
-        ...mergedDefaults.source,
-        ...list.source
-      },
-      output: {
-        owner: outputOwner,
-        repo: outputRepo,
-        branch: list.output?.branch ?? mergedDefaults.output.branch,
-        path: list.output?.path ?? mergedDefaults.output.path
-      },
-      parser: list.parser ?? mergedDefaults.parser,
-      parserOptions: {
-        ...mergedDefaults.parserOptions,
-        ...list.parserOptions
-      },
-      table: list.table ?? mergedDefaults.table
-    };
-  });
+  const resolvedList: ResolvedListConfig = {
+    id: list.id,
+    name: list.name,
+    source: {
+      ...mergedDefaults.source,
+      ...list.source
+    },
+    output: {
+      owner: outputOwner,
+      repo: outputRepo,
+      branch: list.output?.branch ?? mergedDefaults.output.branch,
+      path: list.output?.path ?? mergedDefaults.output.path
+    },
+    parser: list.parser ?? mergedDefaults.parser,
+    parserOptions: {
+      ...mergedDefaults.parserOptions,
+      ...list.parserOptions
+    },
+    table: list.table ?? mergedDefaults.table
+  };
 
   return {
     version: parsed.version,
     defaults: mergedDefaults,
-    lists
+    list: resolvedList
   };
 }
 
@@ -93,5 +92,5 @@ export function resolveConfigPath(configPath?: string): string {
     return configPath;
   }
 
-  return path.resolve("config", "lists.yml");
+  return path.resolve("config", "list.yml");
 }

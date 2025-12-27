@@ -44,7 +44,7 @@ const listSchema = z.object({
 export const configSchema = z.object({
   version: z.number().int().min(1),
   defaults: defaultsSchema.optional(),
-  lists: z.array(listSchema).min(1)
+  list: listSchema
 });
 
 export type ConfigSchema = z.infer<typeof configSchema>;

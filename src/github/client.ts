@@ -18,7 +18,7 @@ export type RateLimitInfo = {
 
 export class GitHubClient {
   private rest: Octokit;
-  private graphqlWithAuth: typeof graphql;
+  private readonly graphqlWithAuth: typeof graphql;
 
   constructor(token: string) {
     this.rest = new Octokit({ auth: token });

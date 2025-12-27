@@ -35,7 +35,7 @@ export type DefaultsConfig = {
 export type RawConfig = {
   version: number;
   defaults?: DefaultsConfig;
-  lists: ListConfig[];
+  list: ListConfig;
 };
 
 export type ResolvedListConfig = Omit<ListConfig, "output" | "parser" | "parserOptions" | "table" | "source"> & {
@@ -49,5 +49,5 @@ export type ResolvedListConfig = Omit<ListConfig, "output" | "parser" | "parserO
 export type ResolvedConfig = {
   version: number;
   defaults: Required<DefaultsConfig>;
-  lists: ResolvedListConfig[];
+  list: ResolvedListConfig;
 };

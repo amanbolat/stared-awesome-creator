@@ -21,23 +21,33 @@ export async function fetchStarsWithCache(
   }
 
   const results = new Map<string, number>();
-  const missing: RepoRef[] = [];
-
-  for (const [key, repo] of unique.entries()) {
-    const cached = cache.get(key);
-    if (cached !== null) {
-      results.set(key, cached);
-    } else {
-      missing.push(repo);
-    }
-  }
-
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
-  for (const batch of chunkArray(missing, batchSize)) {
-    const { stars } = await client.fetchStarsBatch(batch);
-    for (const [key, count] of stars.entries()) {
-      results.set(key, count);
-      cache.set(key, count);
+
+  for (const batch of chunkArray([...unique.values()], batchSize)) {
+    try {
+      const { stars } = await client.fetchStarsBatch(batch);
+      for (const [key, count] of stars.entries()) {
+        results.set(key, count);
+        cache.set(key, count);
+      }
+
+      for (const repo of batch) {
+        const key = repoKey(repo);
+        if (!results.has(key)) {
+          const cached = cache.get(key);
+          if (cached !== null) {
+            results.set(key, cached);
+          }
+        }
+      }
+    } catch {
+      for (const repo of batch) {
+        const key = repoKey(repo);
+        const cached = cache.get(key);
+        if (cached !== null) {
+          results.set(key, cached);
+        }
+      }
     }
   }
 

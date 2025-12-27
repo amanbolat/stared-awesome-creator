@@ -3,19 +3,16 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 export const DEFAULT_CACHE_PATH = "/var/lib/stared-awesome-creator/cache.db";
-export const DEFAULT_TTL_SECONDS = 60 * 60 * 24;
 
 export class SQLiteCache {
   private db: Database.Database;
-  private ttlSeconds: number;
 
   private getStmt: Database.Statement<[string]>;
   private setStmt: Database.Statement<[string, number, number]>;
 
-  constructor(cachePath: string, ttlSeconds = DEFAULT_TTL_SECONDS) {
+  constructor(cachePath: string) {
     ensureDir(path.dirname(cachePath));
     this.db = new Database(cachePath);
-    this.ttlSeconds = ttlSeconds;
 
     this.db.pragma("journal_mode = WAL");
     this.db.exec(
@@ -35,8 +32,7 @@ export class SQLiteCache {
     if (!row) {
       return null;
     }
-    const isFresh = Date.now() / 1000 - row.updated_at < this.ttlSeconds;
-    return isFresh ? row.stars : null;
+    return row.stars;
   }
 
   set(repoKey: string, stars: number): void {

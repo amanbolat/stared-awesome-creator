@@ -2,7 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { visit } from "unist-util-visit";
 import { toString } from "mdast-util-to-string";
-import type { Content, Heading, List, ListItem, Root } from "mdast";
+import type { Heading, List, ListItem, Root, RootContent } from "mdast";
 
 import type {
   ParsedCategory,
@@ -92,7 +92,7 @@ function extractItem(listItem: ListItem): ParsedItem | null {
 function extractDescription(listItem: ListItem, linkText: string): string {
   const paragraph = listItem.children.find(
     (child) => child.type === "paragraph"
-  ) as Content | undefined;
+  ) as RootContent | undefined;
 
   if (!paragraph) {
     return "";
