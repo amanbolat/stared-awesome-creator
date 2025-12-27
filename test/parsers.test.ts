@@ -9,11 +9,11 @@ import { createParserRegistry } from "../src/parsers/index.ts";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(__dirname, "fixtures");
 
-async function loadFixture(name) {
+async function loadFixture(name: string): Promise<string> {
   return await fs.readFile(path.join(fixturesDir, name), "utf-8");
 }
 
-test("awesome-rust parser skips table of contents and finds categories", async () => {
+void test("awesome-rust parser skips table of contents and finds categories", async () => {
   const registry = createParserRegistry();
   const parser = registry.get("awesome-rust");
   const markdown = await loadFixture("awesome-rust.md");
@@ -29,7 +29,7 @@ test("awesome-rust parser skips table of contents and finds categories", async (
   assert.equal(dano.url, "https://github.com/kimono-koans/dano");
 });
 
-test("awesome-zig parser ignores contents and captures tool categories", async () => {
+void test("awesome-zig parser ignores contents and captures tool categories", async () => {
   const registry = createParserRegistry();
   const parser = registry.get("awesome-zig");
   const markdown = await loadFixture("awesome-zig.md");
@@ -42,7 +42,7 @@ test("awesome-zig parser ignores contents and captures tool categories", async (
   assert.ok(editors.items.length > 0);
 });
 
-test("awesome-postgres parser captures depth-3 categories only", async () => {
+void test("awesome-postgres parser captures depth-3 categories only", async () => {
   const registry = createParserRegistry();
   const parser = registry.get("awesome-postgres");
   const markdown = await loadFixture("awesome-postgres.md");

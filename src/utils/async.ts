@@ -4,7 +4,7 @@ export function createLimiter(limit: number): <T>(fn: () => Promise<T>) => Promi
   }
 
   let active = 0;
-  const queue: Array<() => void> = [];
+  const queue: (() => void)[] = [];
 
   const next = (): void => {
     if (queue.length === 0 || active >= limit) {

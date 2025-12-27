@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { sortItemsByStars } from "../src/utils/sort.ts";
 
-test("sortItemsByStars orders by stars desc then name", () => {
+void test("sortItemsByStars orders by stars desc then name", () => {
   const items = [
     { name: "Bravo", stars: 5 },
     { name: "Alpha", stars: 5 },

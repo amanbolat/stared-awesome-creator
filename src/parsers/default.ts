@@ -2,7 +2,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { visit } from "unist-util-visit";
 import { toString } from "mdast-util-to-string";
-import type { Heading, List, ListItem, Root, RootContent } from "mdast";
+import type { Link, List, ListItem, Paragraph } from "mdast";
 
 import type {
   ParsedCategory,
@@ -17,7 +17,7 @@ const DEFAULT_HEADING_DEPTHS = [2, 3];
 export const defaultParser: Parser = {
   id: "default",
   parse(markdown: string, options: ParserOptions): ParsedList {
-    const tree = unified().use(remarkParse).parse(markdown) as Root;
+    const tree = unified().use(remarkParse).parse(markdown);
     const headingDepths = options.headingDepths ?? DEFAULT_HEADING_DEPTHS;
     const ignoreHeadings = new Set(
       (options.ignoreHeadings ?? []).map((heading) => normalizeHeading(heading))
@@ -29,7 +29,7 @@ export const defaultParser: Parser = {
 
     for (const node of tree.children) {
       if (node.type === "heading") {
-        const heading = node as Heading;
+        const heading = node;
         const text = toString(heading).trim();
         if (heading.depth === 1 && !title) {
           title = text;
@@ -46,7 +46,7 @@ export const defaultParser: Parser = {
       }
 
       if (node.type === "list" && currentCategory) {
-        const list = node as List;
+        const list = node;
         const items = extractListItems(list);
         if (items.length > 0) {
           currentCategory.items.push(...items);
@@ -65,8 +65,8 @@ function normalizeHeading(value: string): string {
 function extractListItems(list: List): ParsedItem[] {
   const results: ParsedItem[] = [];
 
-  for (const listItem of list.children ?? []) {
-    const item = extractItem(listItem as ListItem);
+  for (const listItem of list.children) {
+    const item = extractItem(listItem);
     if (item) {
       results.push(item);
     }
@@ -79,12 +79,12 @@ function extractItem(listItem: ListItem): ParsedItem | null {
   let linkUrl: string | null = null;
   let linkText: string | null = null;
 
-  visit(listItem, "link", (node) => {
+  visit(listItem, "link", (node: Link) => {
     if (linkUrl) {
       return;
     }
-    linkUrl = (node as any).url;
-    linkText = toString(node as any).trim();
+    linkUrl = node.url;
+    linkText = toString(node).trim();
   });
 
   if (!linkUrl || !linkText) {
@@ -102,8 +102,8 @@ function extractItem(listItem: ListItem): ParsedItem | null {
 
 function extractDescription(listItem: ListItem, linkText: string): string {
   const paragraph = listItem.children.find(
-    (child) => child.type === "paragraph"
-  ) as RootContent | undefined;
+    (child): child is Paragraph => child.type === "paragraph"
+  );
 
   if (!paragraph) {
     return "";
@@ -119,7 +119,7 @@ function extractDescription(listItem: ListItem, linkText: string): string {
     return stripSeparator(rest);
   }
 
-  const match = text.match(/\s[-:]\s(.+)/);
+  const match = /\s[-:]\s(.+)/.exec(text);
   if (match?.[1]) {
     return match[1].trim();
   }

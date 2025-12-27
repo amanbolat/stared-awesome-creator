@@ -10,15 +10,15 @@ type BatchResponse = {
 };
 
 class FakeGitHubClient {
-  responses: Array<Error | ((batch: RepoRef[]) => BatchResponse)>;
+  responses: (Error | ((batch: RepoRef[]) => BatchResponse))[];
   calls: number;
 
-  constructor(responses: Array<Error | ((batch: RepoRef[]) => BatchResponse)>) {
+  constructor(responses: (Error | ((batch: RepoRef[]) => BatchResponse))[]) {
     this.responses = responses;
     this.calls = 0;
   }
 
-  async fetchStarsBatch(batch: RepoRef[]): Promise<BatchResponse> {
+  fetchStarsBatch(batch: RepoRef[]): Promise<BatchResponse> {
     this.calls += 1;
     const next = this.responses.shift();
     if (next instanceof Error) {
@@ -27,11 +27,11 @@ class FakeGitHubClient {
     if (!next) {
       throw new Error("Missing mock response");
     }
-    return next(batch);
+    return Promise.resolve(next(batch));
   }
 }
 
-test("fetchStarsWithCache retries and falls back to cache", async () => {
+void test("fetchStarsWithCache retries and falls back to cache", async () => {
   const cache = new SQLiteCache(":memory:");
   const repos: RepoRef[] = [
     { owner: "example", name: "repo-one" },
@@ -43,7 +43,7 @@ test("fetchStarsWithCache retries and falls back to cache", async () => {
   const client = new FakeGitHubClient([
     new Error("temporary failure"),
     (batch) => {
-      const stars = new Map();
+      const stars = new Map<string, number>();
       stars.set(repoKey(batch[0]), 10);
       return { stars };
     }

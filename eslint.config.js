@@ -7,13 +7,27 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const tsTypeCheckedConfigs = tseslint.configs["flat/recommended-type-checked"].map(
+  (config) => ({
+    ...config,
+    files: ["**/*.ts"]
+  })
+);
+
+const tsStylisticTypeCheckedConfigs = tseslint.configs[
+  "flat/stylistic-type-checked"
+].map((config) => ({
+  ...config,
+  files: ["**/*.ts"]
+}));
+
 export default [
   {
     ignores: ["dist/**", "node_modules/**", "out/**", "coverage/**"]
   },
   js.configs.recommended,
-  ...tseslint.configs["flat/recommended-type-checked"],
-  ...tseslint.configs["flat/stylistic-type-checked"],
+  ...tsTypeCheckedConfigs,
+  ...tsStylisticTypeCheckedConfigs,
   {
     files: ["**/*.ts"],
     languageOptions: {
@@ -32,7 +46,8 @@ export default [
       "no-console": "off",
       "no-undef": "off",
       "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/consistent-type-definitions": ["error", "type"]
     }
   }
 ];

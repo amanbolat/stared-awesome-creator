@@ -23,10 +23,10 @@ export function renderList(list: ParsedList): string {
 
 function renderCategory(category: ParsedCategory): string {
   const rows = category.items.map((item) => {
-    const stars = item.stars ?? null;
+    const stars = item.stars ?? "-";
     const name = `[${escapeTableCell(item.name)}](${item.url})`;
     const description = escapeTableCell(item.description);
-    return `| ${stars === null ? "-" : stars} | ${name} | ${description} |`;
+    return `| ${stars} | ${name} | ${description} |`;
   });
 
   return [

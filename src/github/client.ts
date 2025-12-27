@@ -16,6 +16,26 @@ export type RateLimitInfo = {
   cost?: number;
 };
 
+type GraphQLRepoResult = {
+  stargazerCount: number;
+};
+
+type GraphQLRateLimit = {
+  remaining: number;
+  resetAt: string;
+  cost?: number | null;
+};
+
+type GraphQLResponse = {
+  rateLimit?: GraphQLRateLimit | null;
+} & Record<string, GraphQLRepoResult | GraphQLRateLimit | null | undefined>;
+
+function isRepoResult(
+  value: GraphQLRepoResult | GraphQLRateLimit | null | undefined
+): value is GraphQLRepoResult {
+  return Boolean(value && typeof value === "object" && "stargazerCount" in value);
+}
+
 export class GitHubClient {
   private rest: Octokit;
   private readonly graphqlWithAuth: typeof graphql;
@@ -89,11 +109,18 @@ export class GitHubClient {
 
     const query = `query {\n${fields}\nrateLimit { remaining resetAt cost }\n}`;
 
-    const data = (await this.graphqlWithAuth(query)) as Record<string, any>;
+    const data = await this.graphqlWithAuth<GraphQLResponse>(query);
     const stars = new Map<string, number>();
 
-    for (const [key, value] of Object.entries(data)) {
-      if (!key.startsWith("repo") || !value) {
+    for (const key in data) {
+      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+        continue;
+      }
+      if (!key.startsWith("repo")) {
+        continue;
+      }
+      const value = data[key];
+      if (!isRepoResult(value)) {
         continue;
       }
       const index = Number.parseInt(key.replace("repo", ""), 10);
@@ -101,17 +128,14 @@ export class GitHubClient {
       if (!repo) {
         continue;
       }
-      const count = value.stargazerCount;
-      if (typeof count === "number") {
-        stars.set(`${repo.owner}/${repo.name}`, count);
-      }
+      stars.set(`${repo.owner}/${repo.name}`, value.stargazerCount);
     }
 
     const rateLimit = data.rateLimit
       ? {
           remaining: data.rateLimit.remaining,
           resetAt: data.rateLimit.resetAt,
-          cost: data.rateLimit.cost
+          cost: data.rateLimit.cost ?? undefined
         }
       : undefined;
 
