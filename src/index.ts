@@ -9,6 +9,7 @@ import { fetchStarsWithCache } from "./github/stars.js";
 import { createParserRegistry } from "./parsers/index.js";
 import { renderList } from "./renderer/table.js";
 import { parseGitHubRepo, repoKey, type RepoRef } from "./utils/github.js";
+import { sortItemsByStars } from "./utils/sort.js";
 
 const ENV_TOKEN = "GITHUB_TOKEN";
 const ENV_CACHE_PATH = "STAR_CACHE_PATH";
@@ -75,7 +76,7 @@ for (const category of parsed.categories) {
       item.stars = null;
     }
   }
-  sortItems(category.items);
+  sortItemsByStars(category.items);
 }
 
 const output = renderList(parsed);
@@ -99,17 +100,6 @@ if (dryRun) {
 }
 
 cache.close();
-
-function sortItems(items: Array<{ stars?: number | null; name: string }>): void {
-  items.sort((a, b) => {
-    const left = a.stars ?? -1;
-    const right = b.stars ?? -1;
-    if (right !== left) {
-      return right - left;
-    }
-    return a.name.localeCompare(b.name);
-  });
-}
 
 function parseBoolean(value: string | undefined): boolean {
   if (!value) {

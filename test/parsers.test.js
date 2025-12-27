@@ -24,7 +24,9 @@ test("awesome-rust parser skips table of contents and finds categories", async (
 
   const audio = parsed.categories.find((cat) => cat.title === "Audio and Music");
   assert.ok(audio);
-  assert.ok(audio.items.some((item) => item.name === "dano"));
+  const dano = audio.items.find((item) => item.name === "dano");
+  assert.ok(dano);
+  assert.equal(dano.url, "https://github.com/kimono-koans/dano");
 });
 
 test("awesome-zig parser ignores contents and captures tool categories", async () => {
