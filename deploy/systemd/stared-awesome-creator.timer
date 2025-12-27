@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily run for Stared Awesome Creator
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

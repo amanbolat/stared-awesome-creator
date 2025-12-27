@@ -1,0 +1,17 @@
+[Unit]
+Description=Stared Awesome Creator (update awesome list with stars)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/stared-awesome-creator
+EnvironmentFile=/etc/stared-awesome-creator.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/stared-awesome-creator/dist/index.js --config /etc/stared-awesome-creator/list.yml
+User=stared
+Group=stared
+StateDirectory=stared-awesome-creator
+
+[Install]
+WantedBy=multi-user.target
