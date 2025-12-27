@@ -68,6 +68,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   const resolvedList: ResolvedListConfig = {
     id: list.id,
     name: list.name,
+    header: list.header,
     source: {
       ...mergedDefaults.source,
       ...list.source

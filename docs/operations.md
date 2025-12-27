@@ -17,6 +17,7 @@ npm run build
 - Update `list.source` and `list.output` for the target awesome list.
 - For multiple lists, create separate config files and service units.
 - Optional: set `defaults.cache.ttlSeconds` to reuse star counts updated within the window (e.g., 3600).
+- Optional: set `list.header` to override the rendered header (supports Markdown).
 
 ## Secrets
 Create `/etc/stared-awesome-creator.env`:

@@ -28,6 +28,7 @@ export type ListConfig = {
   parserOptions?: ParserOptions;
   table?: TableConfig;
   cache?: CacheConfig;
+  header?: string;
 };
 
 export type DefaultsConfig = {
@@ -52,6 +53,7 @@ export type ResolvedListConfig = Omit<ListConfig, "output" | "parser" | "parserO
   parserOptions: ParserOptions;
   table: TableConfig;
   cache: CacheConfig;
+  header?: string;
 };
 
 export type ResolvedConfig = {

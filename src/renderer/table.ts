@@ -5,7 +5,13 @@ const DEFAULT_ALIGN = "| ---: | --- | --- |";
 export function renderList(list: ParsedList): string {
   const chunks: string[] = [];
 
-  if (list.title) {
+  if (list.header !== undefined) {
+    const header = list.header.trim();
+    if (header) {
+      chunks.push(header);
+      chunks.push("");
+    }
+  } else if (list.title) {
     chunks.push(`# ${list.title}`);
     chunks.push("");
   }

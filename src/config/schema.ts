@@ -40,6 +40,7 @@ const defaultsSchema = z.object({
 const listSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).optional(),
+  header: z.string().min(1).optional(),
   source: repoSchema,
   output: repoSchema.partial().optional(),
   parser: z.string().min(1).optional(),

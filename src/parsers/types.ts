@@ -12,6 +12,7 @@ export type ParsedCategory = {
 
 export type ParsedList = {
   title?: string;
+  header?: string;
   categories: ParsedCategory[];
 };
 

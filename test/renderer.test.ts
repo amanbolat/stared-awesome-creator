@@ -21,3 +21,21 @@ void test("renderList skips empty categories and formats tables", () => {
   assert.ok(output.includes("| 42 | [Repo](https://github.com/example/repo) | Useful tool |"));
   assert.ok(output.startsWith("# Sample"));
 });
+
+void test("renderList uses header override", () => {
+  const output = renderList({
+    title: "Sample",
+    header: "# Custom Title\n\nCustom intro.",
+    categories: [
+      {
+        title: "Tools",
+        items: [
+          { name: "Repo", url: "https://github.com/example/repo", description: "Useful tool", stars: 42 }
+        ]
+      }
+    ]
+  });
+
+  assert.ok(output.startsWith("# Custom Title"));
+  assert.ok(!output.startsWith("# Sample"));
+});
