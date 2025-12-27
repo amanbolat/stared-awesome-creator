@@ -25,7 +25,7 @@ fixtures, with no real GitHub API calls.
 
 ### Phase 2: Core pipeline and cache
 - [x] Implement pipeline skeleton and parser registry (code-based registration only).
-- [ ] Build GitHub GraphQL client with batching, concurrency caps, retry/backoff, and
+- [x] Build GitHub GraphQL client with batching, concurrency caps, retry/backoff, and
       rate-limit telemetry.
 - [x] Implement SQLite cache without TTL and safe locking/fallback behavior;
       default path in `/var/lib/<app>/cache.db` and env override.
@@ -33,22 +33,22 @@ fixtures, with no real GitHub API calls.
 ### Phase 3: Markdown parsing and rendering
 - [x] Implement parsing/rendering to produce a Markdown table per category.
 - [x] Define sorting: stars descending.
-- [ ] Add parser profiles for awesome-rust, awesome-zig, awesome-postgres.
-- [ ] Build fixtures for each list format to validate parsing and output.
+- [x] Add parser profiles for awesome-rust, awesome-zig, awesome-postgres.
+- [x] Build fixtures for each list format to validate parsing and output.
 
 ### Phase 4: Publishing and dry-run
-- [ ] Implement GitHub README update via API with per-list output repo.
-- [ ] Add dry-run mode to write outputs locally instead of pushing.
+- [x] Implement GitHub README update via API with per-list output repo.
+- [x] Add dry-run mode to write outputs locally instead of pushing.
 
 ### Phase 5: Tests
-- [ ] Add unit tests for parsing, link extraction, sorting, and table rendering.
-- [ ] Add integration tests with mocked GraphQL responses and fixture markdown.
-- [ ] Ensure no tests call real GitHub APIs (use Node's built-in test runner).
+- [x] Add unit tests for parsing, link extraction, sorting, and table rendering.
+- [x] Add integration tests with mocked GraphQL responses and fixture markdown.
+- [x] Ensure no tests call real GitHub APIs (use Node's built-in test runner).
 
 ### Phase 6: VM deployment
-- [ ] Add systemd service and timer for daily runs on Debian arm64.
-- [ ] Document PAT secret handling and log rotation.
-- [ ] Provide an operational runbook (start/stop, troubleshoot, rerun).
+- [x] Add systemd service and timer for daily runs on Debian arm64.
+- [x] Document PAT secret handling and log rotation.
+- [x] Provide an operational runbook (start/stop, troubleshoot, rerun).
 
 ## Acceptance Criteria
 - Daily systemd runs on Debian arm64 complete without AWS dependencies.
