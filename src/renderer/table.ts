@@ -11,6 +11,9 @@ export function renderList(list: ParsedList): string {
   }
 
   for (const category of list.categories) {
+    if (category.items.length === 0) {
+      continue;
+    }
     chunks.push(renderCategory(category));
     chunks.push("");
   }

@@ -12,6 +12,7 @@ export type TableConfig = {
 
 export type ParserOptions = {
   headingDepths?: number[];
+  ignoreHeadings?: string[];
 };
 
 export type ListConfig = {

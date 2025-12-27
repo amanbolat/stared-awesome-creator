@@ -17,6 +17,7 @@ export type ParsedList = {
 
 export type ParserOptions = {
   headingDepths?: number[];
+  ignoreHeadings?: string[];
 };
 
 export type Parser = {

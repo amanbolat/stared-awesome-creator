@@ -19,6 +19,9 @@ export const defaultParser: Parser = {
   parse(markdown: string, options: ParserOptions): ParsedList {
     const tree = unified().use(remarkParse).parse(markdown) as Root;
     const headingDepths = options.headingDepths ?? DEFAULT_HEADING_DEPTHS;
+    const ignoreHeadings = new Set(
+      (options.ignoreHeadings ?? []).map((heading) => normalizeHeading(heading))
+    );
 
     const categories: ParsedCategory[] = [];
     let currentCategory: ParsedCategory | null = null;
@@ -32,6 +35,10 @@ export const defaultParser: Parser = {
           title = text;
         }
         if (headingDepths.includes(heading.depth)) {
+          if (ignoreHeadings.has(normalizeHeading(text))) {
+            currentCategory = null;
+            continue;
+          }
           currentCategory = { title: text, items: [] };
           categories.push(currentCategory);
         }
@@ -50,6 +57,10 @@ export const defaultParser: Parser = {
     return { title, categories };
   }
 };
+
+function normalizeHeading(value: string): string {
+  return value.trim().toLowerCase();
+}
 
 function extractListItems(list: List): ParsedItem[] {
   const results: ParsedItem[] = [];

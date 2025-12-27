@@ -17,7 +17,8 @@ const tableSchema = z.object({
 });
 
 const parserOptionsSchema = z.object({
-  headingDepths: z.array(z.number().int().min(1).max(6)).optional()
+  headingDepths: z.array(z.number().int().min(1).max(6)).optional(),
+  ignoreHeadings: z.array(z.string().min(1)).optional()
 });
 
 const defaultsSchema = z.object({
