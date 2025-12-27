@@ -11,6 +11,7 @@ list:
   source:
     owner: dhamaniasad
     repo: awesome-postgres
+    branch: master
   output:
     owner: amanbolat
   parser: awesome-postgres
