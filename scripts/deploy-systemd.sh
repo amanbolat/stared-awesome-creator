@@ -40,6 +40,18 @@ if ! command -v rsync >/dev/null 2>&1; then
   exit 1
 fi
 
+REQUIRED_NODE_ENGINE=$(node -e "const fs = require('node:fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); console.log(pkg.engines?.node ?? '')")
+if [ -z "$REQUIRED_NODE_ENGINE" ]; then
+  echo "package.json must declare engines.node for deployment." >&2
+  exit 1
+fi
+
+REQUIRED_NODE_MAJOR=$(echo "$REQUIRED_NODE_ENGINE" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+if [ -z "$REQUIRED_NODE_MAJOR" ]; then
+  echo "Unable to determine required Node major from engines.node ($REQUIRED_NODE_ENGINE)." >&2
+  exit 1
+fi
+
 SSH_OPTS=()
 if [ -n "$SSH_PORT" ]; then
   SSH_OPTS+=("-p" "$SSH_PORT")
@@ -58,11 +70,35 @@ remote_cmd_quiet() {
   ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "$@" >/dev/null
 }
 
-REMOTE_NODE_BIN=$(remote_cmd "command -v node || true")
-if [ -z "$REMOTE_NODE_BIN" ]; then
-  echo "Node.js is required on the remote host (install Node 24)." >&2
-  exit 1
-fi
+ensure_remote_node() {
+  local remote_version
+  local remote_major
+
+  remote_version=$(remote_cmd "node -p \"process.versions.node\" 2>/dev/null || true")
+  if [ -n "$remote_version" ]; then
+    remote_major=${remote_version%%.*}
+    if [ "$remote_major" = "$REQUIRED_NODE_MAJOR" ]; then
+      REMOTE_NODE_BIN=$(remote_cmd "command -v node")
+      return
+    fi
+  fi
+
+  echo "Installing Node.js ${REQUIRED_NODE_MAJOR} on the remote host..."
+  remote_cmd "sudo apt-get update -y"
+  remote_cmd "sudo apt-get install -y ca-certificates curl gnupg"
+  remote_cmd "curl -fsSL https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x | sudo -E bash -"
+  remote_cmd "sudo apt-get install -y nodejs"
+
+  REMOTE_NODE_BIN=$(remote_cmd "command -v node")
+  remote_version=$(remote_cmd "$REMOTE_NODE_BIN -p 'process.versions.node'")
+  remote_major=${remote_version%%.*}
+  if [ "$remote_major" != "$REQUIRED_NODE_MAJOR" ]; then
+    echo "Remote Node version ($remote_version) does not match required major ${REQUIRED_NODE_MAJOR}." >&2
+    exit 1
+  fi
+}
+
+ensure_remote_node
 
 if ! remote_cmd_quiet "command -v npm"; then
   echo "npm is required on the remote host." >&2
