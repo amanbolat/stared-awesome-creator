@@ -21,6 +21,10 @@ const parserOptionsSchema = z.object({
   ignoreHeadings: z.array(z.string().min(1)).optional()
 });
 
+const cacheSchema = z.object({
+  ttlSeconds: z.number().int().min(1)
+});
+
 const defaultsSchema = z.object({
   source: repoSchema.partial().optional(),
   output: repoSchema
@@ -29,7 +33,8 @@ const defaultsSchema = z.object({
     .optional(),
   parser: z.string().min(1).optional(),
   parserOptions: parserOptionsSchema.optional(),
-  table: tableSchema.optional()
+  table: tableSchema.optional(),
+  cache: cacheSchema.optional()
 });
 
 const listSchema = z.object({
@@ -39,7 +44,8 @@ const listSchema = z.object({
   output: repoSchema.partial().optional(),
   parser: z.string().min(1).optional(),
   parserOptions: parserOptionsSchema.optional(),
-  table: tableSchema.optional()
+  table: tableSchema.optional(),
+  cache: cacheSchema.optional()
 });
 
 export const configSchema = z.object({

@@ -28,11 +28,19 @@ export class SQLiteCache {
   }
 
   get(repoKey: string): number | null {
+    const entry = this.getEntry(repoKey);
+    if (!entry) {
+      return null;
+    }
+    return entry.stars;
+  }
+
+  getEntry(repoKey: string): { stars: number; updatedAt: number } | null {
     const row = this.getStmt.get(repoKey) as { stars: number; updated_at: number } | undefined;
     if (!row) {
       return null;
     }
-    return row.stars;
+    return { stars: row.stars, updatedAt: row.updated_at };
   }
 
   set(repoKey: string, stars: number): void {

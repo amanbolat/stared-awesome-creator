@@ -30,7 +30,10 @@ const DEFAULTS: Required<DefaultsConfig> = {
   parserOptions: {
     headingDepths: [2, 3]
   },
-  table: DEFAULT_TABLE
+  table: DEFAULT_TABLE,
+  cache: {
+    ttlSeconds: 60 * 60
+  }
 };
 
 export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
@@ -45,7 +48,10 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
       ...DEFAULTS.parserOptions,
       ...parsed.defaults?.parserOptions
     },
-    table: parsed.defaults?.table ?? DEFAULTS.table
+    table: parsed.defaults?.table ?? DEFAULTS.table,
+    cache: {
+      ttlSeconds: parsed.defaults?.cache?.ttlSeconds ?? DEFAULTS.cache.ttlSeconds
+    }
   };
 
   const list = parsed.list;
@@ -77,7 +83,10 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
       ...mergedDefaults.parserOptions,
       ...list.parserOptions
     },
-    table: list.table ?? mergedDefaults.table
+    table: list.table ?? mergedDefaults.table,
+    cache: {
+      ttlSeconds: list.cache?.ttlSeconds ?? mergedDefaults.cache.ttlSeconds
+    }
   };
 
   return {

@@ -15,6 +15,10 @@ export type ParserOptions = {
   ignoreHeadings?: string[];
 };
 
+export type CacheConfig = {
+  ttlSeconds: number;
+};
+
 export type ListConfig = {
   id: string;
   name?: string;
@@ -23,6 +27,7 @@ export type ListConfig = {
   parser: string;
   parserOptions?: ParserOptions;
   table?: TableConfig;
+  cache?: CacheConfig;
 };
 
 export type DefaultsConfig = {
@@ -31,6 +36,7 @@ export type DefaultsConfig = {
   parser?: string;
   parserOptions?: ParserOptions;
   table?: TableConfig;
+  cache?: CacheConfig;
 };
 
 export type RawConfig = {
@@ -45,6 +51,7 @@ export type ResolvedListConfig = Omit<ListConfig, "output" | "parser" | "parserO
   parser: string;
   parserOptions: ParserOptions;
   table: TableConfig;
+  cache: CacheConfig;
 };
 
 export type ResolvedConfig = {

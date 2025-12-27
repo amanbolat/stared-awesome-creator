@@ -15,6 +15,7 @@ export type StarFetchOptions = {
   retryDelayMs?: number;
   maxRetryDelayMs?: number;
   logRateLimit?: boolean;
+  cacheMaxAgeSeconds?: number;
 };
 
 const DEFAULT_BATCH_SIZE = 25;
@@ -22,6 +23,7 @@ const DEFAULT_CONCURRENCY = 3;
 const DEFAULT_RETRIES = 2;
 const DEFAULT_RETRY_DELAY_MS = 500;
 const DEFAULT_MAX_RETRY_DELAY_MS = 4000;
+const DEFAULT_CACHE_MAX_AGE_SECONDS = 60 * 60;
 
 export async function fetchStarsWithCache(
   client: StarClient,
@@ -35,12 +37,32 @@ export async function fetchStarsWithCache(
   }
 
   const results = new Map<string, number>();
+  const cacheMaxAgeSeconds =
+    options.cacheMaxAgeSeconds ?? DEFAULT_CACHE_MAX_AGE_SECONDS;
+  const now = Math.floor(Date.now() / 1000);
+  const toFetch: RepoRef[] = [];
+
+  for (const [key, repo] of unique.entries()) {
+    if (cacheMaxAgeSeconds > 0) {
+      const cached = cache.getEntry(key);
+      if (cached && now - cached.updatedAt <= cacheMaxAgeSeconds) {
+        results.set(key, cached.stars);
+        continue;
+      }
+    }
+    toFetch.push(repo);
+  }
+
+  if (toFetch.length === 0) {
+    return results;
+  }
+
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   const limiter = createLimiter(concurrency);
   const logRateLimit = options.logRateLimit ?? true;
 
-  const batches = chunkArray([...unique.values()], batchSize);
+  const batches = chunkArray(toFetch, batchSize);
   const tasks = batches.map((batch) =>
     limiter(async () => {
       await processBatch(client, cache, batch, results, {

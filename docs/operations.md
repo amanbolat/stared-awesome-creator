@@ -16,6 +16,7 @@ npm run build
 - Copy the template config from `configs/list.yml` to `/etc/stared-awesome-creator/list.yml`.
 - Update `list.source` and `list.output` for the target awesome list.
 - For multiple lists, create separate config files and service units.
+- Optional: set `defaults.cache.ttlSeconds` to reuse star counts updated within the window (e.g., 3600).
 
 ## Secrets
 Create `/etc/stared-awesome-creator.env`:

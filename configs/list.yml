@@ -12,6 +12,8 @@ defaults:
   parser: default
   parserOptions:
     headingDepths: [2, 3]
+  cache:
+    ttlSeconds: 3600
   table:
     columns: [stars, name, description]
     sort: stars_desc

@@ -56,7 +56,9 @@ export async function runWorkflow(options: WorkflowOptions): Promise<WorkflowRes
     }
   }
 
-  const stars = await fetchStarsWithCache(client, cache, repoRefs);
+  const stars = await fetchStarsWithCache(client, cache, repoRefs, {
+    cacheMaxAgeSeconds: list.cache.ttlSeconds
+  });
 
   for (const category of parsed.categories) {
     for (const item of category.items) {

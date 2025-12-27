@@ -85,6 +85,9 @@ void test("workflow fetches source README, stars, and updates destination", asyn
       headingDepths: [2, 3],
       ignoreHeadings: []
     },
+    cache: {
+      ttlSeconds: 60 * 60
+    },
     table: {
       columns: ["stars", "name", "description"],
       sort: "stars_desc"
