@@ -2,7 +2,11 @@ import { chunkArray } from "../utils/arrays.js";
 import { createLimiter, sleep } from "../utils/async.js";
 import { repoKey, type RepoRef } from "../utils/github.js";
 import { SQLiteCache } from "../cache/sqlite.js";
-import { GitHubClient } from "./client.js";
+export type StarClient = {
+  fetchStarsBatch(
+    repos: RepoRef[]
+  ): Promise<{ stars: Map<string, number>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }>;
+};
 
 export type StarFetchOptions = {
   batchSize?: number;
@@ -20,7 +24,7 @@ const DEFAULT_RETRY_DELAY_MS = 500;
 const DEFAULT_MAX_RETRY_DELAY_MS = 4000;
 
 export async function fetchStarsWithCache(
-  client: GitHubClient,
+  client: StarClient,
   cache: SQLiteCache,
   repos: RepoRef[],
   options: StarFetchOptions = {}
@@ -61,7 +65,7 @@ type BatchOptions = {
 };
 
 async function processBatch(
-  client: GitHubClient,
+  client: StarClient,
   cache: SQLiteCache,
   batch: RepoRef[],
   results: Map<string, number>,
@@ -95,7 +99,7 @@ async function processBatch(
 }
 
 async function fetchBatchWithRetry(
-  client: GitHubClient,
+  client: StarClient,
   batch: RepoRef[],
   options: BatchOptions
 ): Promise<{ stars: Map<string, number>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }> {

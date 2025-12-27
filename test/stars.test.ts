@@ -33,18 +33,21 @@ class FakeGitHubClient {
 
 void test("fetchStarsWithCache retries and falls back to cache", async () => {
   const cache = new SQLiteCache(":memory:");
-  const repos: RepoRef[] = [
-    { owner: "example", name: "repo-one" },
-    { owner: "example", name: "repo-two" }
-  ];
+  const repoOne: RepoRef = { owner: "example", name: "repo-one" };
+  const repoTwo: RepoRef = { owner: "example", name: "repo-two" };
+  const repos: RepoRef[] = [repoOne, repoTwo];
 
-  cache.set(repoKey(repos[1]), 99);
+  cache.set(repoKey(repoTwo), 99);
 
   const client = new FakeGitHubClient([
     new Error("temporary failure"),
     (batch) => {
       const stars = new Map<string, number>();
-      stars.set(repoKey(batch[0]), 10);
+      const [first] = batch;
+      if (!first) {
+        throw new Error("Missing repo");
+      }
+      stars.set(repoKey(first), 10);
       return { stars };
     }
   ]);
@@ -59,7 +62,7 @@ void test("fetchStarsWithCache retries and falls back to cache", async () => {
   });
 
   assert.equal(client.calls, 2);
-  assert.equal(result.get(repoKey(repos[0])), 10);
-  assert.equal(result.get(repoKey(repos[1])), 99);
+  assert.equal(result.get(repoKey(repoOne)), 10);
+  assert.equal(result.get(repoKey(repoTwo)), 99);
   cache.close();
 });
