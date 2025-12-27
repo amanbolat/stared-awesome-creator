@@ -5,7 +5,7 @@ list:
   source:
     owner: rust-unofficial
     repo: awesome-rust
-    branch: master
+    branch: main
   output:
     owner: amanbolat
   parser: awesome-rust
