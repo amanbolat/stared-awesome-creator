@@ -2,6 +2,10 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
   {
@@ -14,7 +18,9 @@ export default [
       parser: tsParser,
       parserOptions: {
         ecmaVersion: "latest",
-        sourceType: "module"
+        sourceType: "module",
+        project: ["./tsconfig.json", "./test/tsconfig.json"],
+        tsconfigRootDir: __dirname
       },
       globals: {
         ...globals.node
@@ -24,7 +30,8 @@ export default [
       "@typescript-eslint": tseslint
     },
     rules: {
-      ...tseslint.configs.recommended.rules,
+      ...tseslint.configs.recommendedTypeChecked.rules,
+      ...tseslint.configs.stylisticTypeChecked.rules,
       "no-console": "off",
       "no-undef": "off",
       "no-unused-vars": "off",
