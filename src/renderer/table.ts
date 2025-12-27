@@ -23,7 +23,7 @@ function renderCategory(category: ParsedCategory): string {
     const stars = item.stars ?? null;
     const name = `[${escapeTableCell(item.name)}](${item.url})`;
     const description = escapeTableCell(item.description);
-    return `| ${stars === null ? \"-\" : stars} | ${name} | ${description} |`;
+    return `| ${stars === null ? "-" : stars} | ${name} | ${description} |`;
   });
 
   return [
