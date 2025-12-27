@@ -1,0 +1,16 @@
+version: 1
+
+list:
+  id: awesome-postgres
+  header: |
+    # Awesome Postgres
+
+    This repository is a clone of [Awesome Postgres](https://github.com/dhamaniasad/awesome-postgres) but with stars.
+    All repositories are sorted by star count. Stars are updated every day automatically.
+  toc: true
+  source:
+    owner: dhamaniasad
+    repo: awesome-postgres
+  output:
+    owner: amanbolat
+  parser: awesome-postgres
