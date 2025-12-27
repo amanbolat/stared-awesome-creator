@@ -26,3 +26,4 @@ out
 *.db
 *.sqlite
 *.sqlite3
+.cache
