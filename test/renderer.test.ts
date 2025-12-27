@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { renderList } from "../dist/renderer/table.js";
+import { renderList } from "../src/renderer/table.ts";
 
 test("renderList skips empty categories and formats tables", () => {
   const output = renderList({

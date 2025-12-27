@@ -1,21 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { SQLiteCache } from "../dist/cache/sqlite.js";
-import { fetchStarsWithCache } from "../dist/github/stars.js";
-import { repoKey } from "../dist/utils/github.js";
+import { SQLiteCache } from "../src/cache/sqlite.ts";
+import { fetchStarsWithCache } from "../src/github/stars.ts";
+import { repoKey, type RepoRef } from "../src/utils/github.ts";
+
+type BatchResponse = {
+  stars: Map<string, number>;
+};
 
 class FakeGitHubClient {
-  constructor(responses) {
+  responses: Array<Error | ((batch: RepoRef[]) => BatchResponse)>;
+  calls: number;
+
+  constructor(responses: Array<Error | ((batch: RepoRef[]) => BatchResponse)>) {
     this.responses = responses;
     this.calls = 0;
   }
 
-  async fetchStarsBatch(batch) {
+  async fetchStarsBatch(batch: RepoRef[]): Promise<BatchResponse> {
     this.calls += 1;
     const next = this.responses.shift();
     if (next instanceof Error) {
       throw next;
+    }
+    if (!next) {
+      throw new Error("Missing mock response");
     }
     return next(batch);
   }
@@ -23,7 +33,7 @@ class FakeGitHubClient {
 
 test("fetchStarsWithCache retries and falls back to cache", async () => {
   const cache = new SQLiteCache(":memory:");
-  const repos = [
+  const repos: RepoRef[] = [
     { owner: "example", name: "repo-one" },
     { owner: "example", name: "repo-two" }
   ];
