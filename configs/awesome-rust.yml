@@ -1,0 +1,11 @@
+version: 1
+
+list:
+  id: awesome-rust
+  source:
+    owner: rust-unofficial
+    repo: awesome-rust
+    branch: master
+  output:
+    owner: amanbolat
+  parser: awesome-rust
