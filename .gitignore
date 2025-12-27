@@ -18,3 +18,11 @@ bin
 *.out
 .idea
 .envrc
+
+# Node/TypeScript artifacts
+node_modules
+dist
+out
+*.db
+*.sqlite
+*.sqlite3
