@@ -1,0 +1,16 @@
+version: 1
+
+list:
+  id: awesome-go
+  header: |
+    # Awesome Go
+
+    This repository is a clone of [Awesome Go](https://github.com/avelino/awesome-go) but with stars.
+    All repositories are sorted by star count. Stars are updated every day automatically.
+  toc: true
+  source:
+    owner: avelino
+    repo: awesome-go
+    branch: master
+  output:
+    owner: amanbolat
