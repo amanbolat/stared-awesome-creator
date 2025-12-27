@@ -12,6 +12,8 @@ export default [
     ignores: ["dist/**", "node_modules/**", "out/**", "coverage/**"]
   },
   js.configs.recommended,
+  ...tseslint.configs["flat/recommended-type-checked"],
+  ...tseslint.configs["flat/stylistic-type-checked"],
   {
     files: ["**/*.ts"],
     languageOptions: {
@@ -26,12 +28,7 @@ export default [
         ...globals.node
       }
     },
-    plugins: {
-      "@typescript-eslint": tseslint
-    },
     rules: {
-      ...tseslint.configs.recommendedTypeChecked.rules,
-      ...tseslint.configs.stylisticTypeChecked.rules,
       "no-console": "off",
       "no-undef": "off",
       "no-unused-vars": "off",
