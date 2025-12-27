@@ -35,6 +35,7 @@ sudo systemctl enable --now stared-awesome-creator.timer
 
 ## Logs and Troubleshooting
 - View logs: `journalctl -u stared-awesome-creator.service -n 200 --no-pager`.
+- Log rotation/retention is handled by journald; adjust `/etc/systemd/journald.conf` if needed.
 - Re-run manually: `/usr/bin/node /opt/stared-awesome-creator/dist/index.js --config /etc/stared-awesome-creator/list.yml`.
 - For a dry run: `DRY_RUN=1 DRY_RUN_DIR=/tmp/stars-out ...`.
 
