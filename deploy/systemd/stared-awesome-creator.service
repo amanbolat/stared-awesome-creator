@@ -8,7 +8,7 @@ Type=oneshot
 WorkingDirectory=/opt/stared-awesome-creator
 EnvironmentFile=/etc/stared-awesome-creator.env
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node /opt/stared-awesome-creator/dist/index.js --config /etc/stared-awesome-creator/list.yml
+ExecStart=/usr/bin/node /opt/stared-awesome-creator/dist/index.js --config /etc/stared-awesome-creator/configs/awesome-go.yml
 User=stared
 Group=stared
 StateDirectory=stared-awesome-creator

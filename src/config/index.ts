@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import yaml from "yaml";
 
 import { configSchema } from "./schema.js";
@@ -101,9 +100,9 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
 }
 
 export function resolveConfigPath(configPath?: string): string {
-  if (configPath) {
-    return configPath;
+  if (!configPath) {
+    throw new Error("Config path is required. Pass --config or -c.");
   }
 
-  return path.resolve("configs", "list.yml");
+  return configPath;
 }
