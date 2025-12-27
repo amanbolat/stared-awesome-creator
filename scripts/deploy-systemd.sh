@@ -7,8 +7,8 @@ SYSTEMD_DIR=${SYSTEMD_DIR:-/etc/systemd/system}
 DEPLOY_DIR=${DEPLOY_DIR:-/etc/stared-awesome-creator}
 DEPLOY_CONFIG_DIR="$DEPLOY_DIR/configs"
 ENV_FILE=${ENV_FILE:-"$DEPLOY_DIR.env"}
-WORKING_DIR=${WORKING_DIR:-/opt/stared-awesome-creator}
-NODE_BIN=${NODE_BIN:-/usr/bin/node}
+WORKING_DIR=${WORKING_DIR:-"$ROOT_DIR"}
+NODE_BIN=${NODE_BIN:-$(command -v node || true)}
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "This script must run as root (use sudo)." >&2
@@ -17,6 +17,11 @@ fi
 
 if [ ! -d "$CONFIG_DIR" ]; then
   echo "Config directory not found: $CONFIG_DIR" >&2
+  exit 1
+fi
+
+if [ -z "$NODE_BIN" ]; then
+  echo "Node.js binary not found. Set NODE_BIN or install Node 24." >&2
   exit 1
 fi
 
