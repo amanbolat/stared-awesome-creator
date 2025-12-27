@@ -92,5 +92,5 @@ export function resolveConfigPath(configPath?: string): string {
     return configPath;
   }
 
-  return path.resolve("config", "list.yml");
+  return path.resolve("configs", "list.yml");
 }

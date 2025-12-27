@@ -9,7 +9,7 @@ fixtures, with no real GitHub API calls.
 
 ## Scope
 - In: Node 24 TS rewrite, systemd timer, PAT auth, SQLite cache with env override,
-  per-source config via `config/list.yml` (one list per instance), code-registered
+  per-source config via `configs/list.yml` (one list per instance), code-registered
   parser plugins, per-category tables with `stars | name | description`, dry-run
   mode, mock/fixture-only tests.
 - Out: AWS/serverless/DynamoDB, real GitHub API in tests, preserving old output format.
@@ -19,7 +19,7 @@ fixtures, with no real GitHub API calls.
 - [x] Define repo layout and core modules: downloader, parser, renderer, star fetcher,
       publisher, cache.
 - [x] Select TS tooling and libraries (tsconfig, lint/format, Node test runner).
-- [x] Create `config/list.yml` schema (source repo, output repo, parser profile,
+- [x] Create `configs/list.yml` schema (source repo, output repo, parser profile,
       table options) with default output naming `<source>-with-stars`.
 - [x] Add config loader/validation and support selecting config path per instance.
 
@@ -53,6 +53,6 @@ fixtures, with no real GitHub API calls.
 ## Acceptance Criteria
 - Daily systemd runs on Debian arm64 complete without AWS dependencies.
 - Per-category markdown tables with `stars | name | description` are generated.
-- New list configs can be added by creating another `config/list.yml` and passing
+- New list configs can be added by creating another `configs/*.yml` and passing
   the config path per instance.
 - All tests run locally using fixtures and mocks only.

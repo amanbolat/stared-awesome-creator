@@ -13,7 +13,7 @@ npm run build
 ```
 
 ## Configuration
-- Copy the template config to `/etc/stared-awesome-creator/list.yml`.
+- Copy the template config from `configs/list.yml` to `/etc/stared-awesome-creator/list.yml`.
 - Update `list.source` and `list.output` for the target awesome list.
 - For multiple lists, create separate config files and service units.
 
