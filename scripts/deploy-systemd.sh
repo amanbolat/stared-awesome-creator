@@ -144,7 +144,7 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 for config_file in "${CONFIG_FILES[@]}"; do
   config_name=$(basename "$config_file")
   list_id=$(node --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { console.error('Missing list.id'); process.exit(1); } console.log(String(id));" "$config_file")
-  safe_id=$(echo "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')
+  safe_id=$(printf '%s' "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed -E 's/^-+//; s/-+$//; s/-+/-/g')
   config_target="$REMOTE_CONFIG_DIR/$config_name"
   cache_path="/var/lib/stared-awesome-creator/stars-${safe_id}.db"
 
@@ -199,7 +199,7 @@ remote_cmd "sudo systemctl daemon-reload"
 
 for config_file in "${CONFIG_FILES[@]}"; do
   list_id=$(node --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { process.exit(1); } console.log(String(id));" "$config_file")
-  safe_id=$(echo "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')
+  safe_id=$(printf '%s' "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed -E 's/^-+//; s/-+$//; s/-+/-/g')
   remote_cmd "sudo systemctl enable --now 'stared-awesome-creator-${safe_id}.timer'"
 done
 
