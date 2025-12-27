@@ -3,15 +3,25 @@ set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG_DIR=${CONFIG_DIR:-"$ROOT_DIR/configs"}
-SYSTEMD_DIR=${SYSTEMD_DIR:-/etc/systemd/system}
-DEPLOY_DIR=${DEPLOY_DIR:-/etc/stared-awesome-creator}
-DEPLOY_CONFIG_DIR="$DEPLOY_DIR/configs"
-ENV_FILE=${ENV_FILE:-"$DEPLOY_DIR.env"}
-WORKING_DIR=${WORKING_DIR:-"$ROOT_DIR"}
-NODE_BIN=${NODE_BIN:-$(command -v node || true)}
+DEPLOY_HOST=${DEPLOY_HOST:-${REMOTE_HOST:-}}
+DEPLOY_USER=${DEPLOY_USER:-${REMOTE_USER:-$USER}}
+REMOTE_WORKING_DIR=${REMOTE_WORKING_DIR:-/opt/stared-awesome-creator}
+REMOTE_SYSTEMD_DIR=${REMOTE_SYSTEMD_DIR:-/etc/systemd/system}
+REMOTE_DEPLOY_DIR=${REMOTE_DEPLOY_DIR:-/etc/stared-awesome-creator}
+REMOTE_CONFIG_DIR=${REMOTE_CONFIG_DIR:-"$REMOTE_DEPLOY_DIR/configs"}
+REMOTE_ENV_FILE=${REMOTE_ENV_FILE:-"$REMOTE_DEPLOY_DIR.env"}
+SSH_PORT=${SSH_PORT:-}
+SSH_KEY=${SSH_KEY:-}
 
-if [ "$(id -u)" -ne 0 ]; then
-  echo "This script must run as root (use sudo)." >&2
+cd "$ROOT_DIR"
+
+if [ -z "$DEPLOY_HOST" ]; then
+  echo "DEPLOY_HOST is required (for example DEPLOY_HOST=your-vm)." >&2
+  exit 1
+fi
+
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "GITHUB_TOKEN is required to create the remote env file." >&2
   exit 1
 fi
 
@@ -20,8 +30,47 @@ if [ ! -d "$CONFIG_DIR" ]; then
   exit 1
 fi
 
-if [ -z "$NODE_BIN" ]; then
-  echo "Node.js binary not found. Set NODE_BIN or install Node 24." >&2
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is required locally to parse configs." >&2
+  exit 1
+fi
+
+if ! command -v rsync >/dev/null 2>&1; then
+  echo "rsync is required locally to sync files." >&2
+  exit 1
+fi
+
+SSH_OPTS=()
+if [ -n "$SSH_PORT" ]; then
+  SSH_OPTS+=("-p" "$SSH_PORT")
+fi
+if [ -n "$SSH_KEY" ]; then
+  SSH_OPTS+=("-i" "$SSH_KEY")
+fi
+
+SSH_TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
+
+remote_cmd() {
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "$@"
+}
+
+remote_cmd_quiet() {
+  ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "$@" >/dev/null
+}
+
+REMOTE_NODE_BIN=$(remote_cmd "command -v node || true")
+if [ -z "$REMOTE_NODE_BIN" ]; then
+  echo "Node.js is required on the remote host (install Node 24)." >&2
+  exit 1
+fi
+
+if ! remote_cmd_quiet "command -v npm"; then
+  echo "npm is required on the remote host." >&2
+  exit 1
+fi
+
+if ! remote_cmd_quiet "command -v rsync"; then
+  echo "rsync is required on the remote host." >&2
   exit 1
 fi
 
@@ -31,47 +80,40 @@ if [ ${#CONFIG_FILES[@]} -eq 0 ]; then
   exit 1
 fi
 
-mkdir -p "$DEPLOY_CONFIG_DIR"
+npm run build
 
-if [ ! -f "$ENV_FILE" ]; then
-  if [ -z "${GITHUB_TOKEN:-}" ]; then
-    echo "GITHUB_TOKEN is required (set env var or create $ENV_FILE with it)." >&2
-    exit 1
-  fi
-  mkdir -p "$DEPLOY_DIR"
-  cat > "$ENV_FILE" <<ENV_EOF
-GITHUB_TOKEN=${GITHUB_TOKEN}
-ENV_EOF
-  if [ -n "${STAR_CACHE_PATH:-}" ]; then
-    echo "STAR_CACHE_PATH=${STAR_CACHE_PATH}" >> "$ENV_FILE"
-  fi
-  chmod 600 "$ENV_FILE"
-else
-  if ! grep -Eq '^GITHUB_TOKEN=.+$' "$ENV_FILE"; then
-    if [ -z "${GITHUB_TOKEN:-}" ]; then
-      echo "GITHUB_TOKEN is required (set env var or update $ENV_FILE)." >&2
-      exit 1
-    fi
-    if grep -q '^GITHUB_TOKEN=' "$ENV_FILE"; then
-      sed -i "s/^GITHUB_TOKEN=.*/GITHUB_TOKEN=${GITHUB_TOKEN}/" "$ENV_FILE"
-    else
-      echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> "$ENV_FILE"
-    fi
-    chmod 600 "$ENV_FILE"
-  fi
+remote_cmd "sudo mkdir -p '$REMOTE_WORKING_DIR' '$REMOTE_CONFIG_DIR' /var/lib/stared-awesome-creator"
+remote_cmd "sudo chown -R '$DEPLOY_USER':'$DEPLOY_USER' '$REMOTE_WORKING_DIR'"
+remote_cmd "sudo id -u stared >/dev/null 2>&1 || sudo useradd --system --home /var/lib/stared-awesome-creator --shell /usr/sbin/nologin stared"
+remote_cmd "sudo chown -R stared:stared /var/lib/stared-awesome-creator"
+
+rsync -az --delete \
+  --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
+  "$ROOT_DIR/dist" "$ROOT_DIR/package.json" "$ROOT_DIR/package-lock.json" "$ROOT_DIR/configs" \
+  "${SSH_TARGET}:${REMOTE_WORKING_DIR}/"
+
+remote_cmd "cd '$REMOTE_WORKING_DIR' && npm ci --omit=dev"
+
+remote_env_content="GITHUB_TOKEN=${GITHUB_TOKEN}"
+if [ -n "${STAR_CACHE_PATH:-}" ]; then
+  remote_env_content+=$'\n'"STAR_CACHE_PATH=${STAR_CACHE_PATH}"
 fi
+
+printf '%s\n' "$remote_env_content" | remote_cmd "sudo tee '$REMOTE_ENV_FILE' >/dev/null"
+remote_cmd "sudo chmod 600 '$REMOTE_ENV_FILE'"
+
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 for config_file in "${CONFIG_FILES[@]}"; do
   config_name=$(basename "$config_file")
-  list_id=$("$NODE_BIN" --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { console.error('Missing list.id'); process.exit(1); } console.log(String(id));" "$config_file")
+  list_id=$(node --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { console.error('Missing list.id'); process.exit(1); } console.log(String(id));" "$config_file")
   safe_id=$(echo "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')
-  config_target="$DEPLOY_CONFIG_DIR/$config_name"
+  config_target="$REMOTE_CONFIG_DIR/$config_name"
   cache_path="/var/lib/stared-awesome-creator/stars-${safe_id}.db"
 
-  install -m 644 "$config_file" "$config_target"
-
-  service_unit="$SYSTEMD_DIR/stared-awesome-creator-${safe_id}.service"
-  timer_unit="$SYSTEMD_DIR/stared-awesome-creator-${safe_id}.timer"
+  service_unit="$TEMP_DIR/stared-awesome-creator-${safe_id}.service"
+  timer_unit="$TEMP_DIR/stared-awesome-creator-${safe_id}.timer"
 
   cat > "$service_unit" <<UNIT_EOF
 [Unit]
@@ -81,11 +123,11 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=${WORKING_DIR}
-EnvironmentFile=${ENV_FILE}
+WorkingDirectory=${REMOTE_WORKING_DIR}
+EnvironmentFile=${REMOTE_ENV_FILE}
 Environment=NODE_ENV=production
 Environment=STAR_CACHE_PATH=${cache_path}
-ExecStart=${NODE_BIN} ${WORKING_DIR}/dist/index.js --config ${config_target}
+ExecStart=${REMOTE_NODE_BIN} ${REMOTE_WORKING_DIR}/dist/index.js --config ${config_target}
 User=stared
 Group=stared
 StateDirectory=stared-awesome-creator
@@ -107,14 +149,22 @@ RandomizedDelaySec=10m
 WantedBy=timers.target
 UNIT_EOF
 
+  remote_cmd "sudo tee '$config_target' >/dev/null" < "$config_file"
+  remote_cmd "sudo chmod 644 '$config_target'"
+
+  remote_cmd "sudo tee '$REMOTE_SYSTEMD_DIR/stared-awesome-creator-${safe_id}.service' >/dev/null" < "$service_unit"
+  remote_cmd "sudo tee '$REMOTE_SYSTEMD_DIR/stared-awesome-creator-${safe_id}.timer' >/dev/null" < "$timer_unit"
+  remote_cmd "sudo chmod 644 '$REMOTE_SYSTEMD_DIR/stared-awesome-creator-${safe_id}.service'"
+  remote_cmd "sudo chmod 644 '$REMOTE_SYSTEMD_DIR/stared-awesome-creator-${safe_id}.timer'"
+
 done
 
-systemctl daemon-reload
+remote_cmd "sudo systemctl daemon-reload"
 
 for config_file in "${CONFIG_FILES[@]}"; do
-  list_id=$("$NODE_BIN" --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { process.exit(1); } console.log(String(id));" "$config_file")
+  list_id=$(node --input-type=module -e "import fs from 'node:fs'; import yaml from 'yaml'; const raw = fs.readFileSync(process.argv[1], 'utf8'); const parsed = yaml.parse(raw); const id = parsed?.list?.id; if (!id) { process.exit(1); } console.log(String(id));" "$config_file")
   safe_id=$(echo "$list_id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')
-  systemctl enable --now "stared-awesome-creator-${safe_id}.timer"
+  remote_cmd "sudo systemctl enable --now 'stared-awesome-creator-${safe_id}.timer'"
 done
 
-echo "Deployed ${#CONFIG_FILES[@]} systemd timer(s)."
+echo "Deployed ${#CONFIG_FILES[@]} systemd timer(s) to ${DEPLOY_HOST}."

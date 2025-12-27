@@ -14,18 +14,12 @@ This service fetches awesome list README files, parses GitHub repository links, 
   - [With stars](https://github.com/amanbolat/awesome-go-with-stars)
 
 ## Deploy (systemd on Debian arm64)
-1) Install Node 24, clone the repo, then run:
-   - `npm ci`
-   - `npm run build`
-2) Provide a GitHub PAT:
-   - Either export `GITHUB_TOKEN=ghp_...` before running the deploy script, or
-   - Create `/etc/stared-awesome-creator.env` with:
-     - `GITHUB_TOKEN=ghp_...`
-     - Optional: `STAR_CACHE_PATH=/var/lib/stared-awesome-creator/stars.db`
-3) Add or update list configs in `configs/` (for example `configs/awesome-rust.yml`).
-4) Deploy systemd units for every config:
-   - `sudo ./scripts/deploy-systemd.sh`
-   - This copies configs to `/etc/stared-awesome-creator/configs` and creates one timer per config.
-5) Verify timers and logs:
+1) On the VM, install Node 24, npm, rsync, and ensure your SSH user has sudo access.
+2) Locally, set a GitHub PAT and point to the VM:
+   - `GITHUB_TOKEN=ghp_... DEPLOY_HOST=your-vm ./scripts/deploy-systemd.sh`
+   - Optional: `DEPLOY_USER=debian`, `SSH_PORT=22`, `SSH_KEY=~/.ssh/id_ed25519`
+3) Add or update list configs in `configs/` (for example `configs/awesome-rust.yml`), then re-run the deploy script.
+4) The script syncs `dist/` and configs to `/opt/stared-awesome-creator`, runs `npm ci --omit=dev`, creates `/etc/stared-awesome-creator.env`, and installs one timer per config.
+5) Verify timers and logs on the VM:
    - `systemctl list-timers 'stared-awesome-creator-*'`
    - `journalctl -u stared-awesome-creator-<list-id>.service -n 200 --no-pager`
