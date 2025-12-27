@@ -11,6 +11,6 @@ list:
   source:
     owner: avelino
     repo: awesome-go
-    branch: master
+    branch: main
   output:
     owner: amanbolat
