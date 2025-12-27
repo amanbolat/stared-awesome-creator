@@ -19,7 +19,11 @@ export function parseGitHubRepo(url: string): RepoRef | null {
       return null;
     }
 
-    return { owner: parts[0], name: parts[1].replace(/\.git$/, "") };
+    const [owner, name] = parts;
+    if (!owner || !name) {
+      return null;
+    }
+    return { owner, name: name.replace(/\.git$/, "") };
   } catch {
     return null;
   }

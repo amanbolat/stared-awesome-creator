@@ -109,7 +109,7 @@ function extractDescription(listItem: ListItem, linkText: string): string {
   }
 
   const match = text.match(/\s[-:]\s(.+)/);
-  if (match) {
+  if (match?.[1]) {
     return match[1].trim();
   }
 
