@@ -34,7 +34,7 @@
     "@typescript-eslint/parser": "8.50.1",
     "eslint": "9.39.2",
     "globals": "16.5.0",
-    "tsx": "4.19.2",
+    "tsx": "4.21.0",
     "typescript": "=5.9.3"
   }
 }
