@@ -4,13 +4,13 @@ import path from "node:path";
 import type { SQLiteCache } from "./cache/sqlite.js";
 import type { ResolvedListConfig } from "./config/types.js";
 import type { GitHubFileRef } from "./github/client.js";
-import { fetchStarsWithCache, type StarClient } from "./github/stars.js";
+import { fetchRepoStatsWithCache, type RepoStatsClient } from "./github/stars.js";
 import type { ParserRegistry } from "./parsers/registry.js";
 import { renderList } from "./renderer/table.js";
 import { parseGitHubRepo, repoKey, type RepoRef } from "./utils/github.js";
 import { sortItemsByStars } from "./utils/sort.js";
 
-export type GitHubClientLike = StarClient & {
+export type GitHubClientLike = RepoStatsClient & {
   fetchFile(ref: GitHubFileRef): Promise<string>;
   updateFile(ref: GitHubFileRef, content: string, message: string): Promise<void>;
 };
@@ -58,7 +58,7 @@ export async function runWorkflow(options: WorkflowOptions): Promise<WorkflowRes
     }
   }
 
-  const stars = await fetchStarsWithCache(client, cache, repoRefs, {
+  const stats = await fetchRepoStatsWithCache(client, cache, repoRefs, {
     cacheMaxAgeSeconds: list.cache.ttlSeconds
   });
 
@@ -66,15 +66,18 @@ export async function runWorkflow(options: WorkflowOptions): Promise<WorkflowRes
     for (const item of category.items) {
       const repo = itemRepoMap.get(item.url);
       if (repo) {
-        item.stars = stars.get(repoKey(repo)) ?? null;
+        const entry = stats.get(repoKey(repo));
+        item.stars = entry?.stars ?? null;
+        item.lastCommitAt = entry?.lastCommitAt ?? null;
       } else {
         item.stars = null;
+        item.lastCommitAt = null;
       }
     }
     sortItemsByStars(category.items);
   }
 
-  const output = renderList(parsed);
+  const output = renderList(parsed, { columns: list.table.columns });
 
   if (dryRun) {
     await fs.mkdir(outputDir, { recursive: true });

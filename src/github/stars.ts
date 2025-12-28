@@ -2,13 +2,19 @@ import { chunkArray } from "../utils/arrays.js";
 import { createLimiter, sleep } from "../utils/async.js";
 import { repoKey, type RepoRef } from "../utils/github.js";
 import { SQLiteCache } from "../cache/sqlite.js";
-export type StarClient = {
-  fetchStarsBatch(
-    repos: RepoRef[]
-  ): Promise<{ stars: Map<string, number>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }>;
+
+export type RepoStats = {
+  stars: number;
+  lastCommitAt?: string | null;
 };
 
-export type StarFetchOptions = {
+export type RepoStatsClient = {
+  fetchRepoStatsBatch(
+    repos: RepoRef[]
+  ): Promise<{ stats: Map<string, RepoStats>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }>;
+};
+
+export type RepoStatsFetchOptions = {
   batchSize?: number;
   concurrency?: number;
   retries?: number;
@@ -25,18 +31,18 @@ const DEFAULT_RETRY_DELAY_MS = 500;
 const DEFAULT_MAX_RETRY_DELAY_MS = 4000;
 const DEFAULT_CACHE_MAX_AGE_SECONDS = 60 * 60;
 
-export async function fetchStarsWithCache(
-  client: StarClient,
+export async function fetchRepoStatsWithCache(
+  client: RepoStatsClient,
   cache: SQLiteCache,
   repos: RepoRef[],
-  options: StarFetchOptions = {}
-): Promise<Map<string, number>> {
+  options: RepoStatsFetchOptions = {}
+): Promise<Map<string, RepoStats>> {
   const unique = new Map<string, RepoRef>();
   for (const repo of repos) {
     unique.set(repoKey(repo), repo);
   }
 
-  const results = new Map<string, number>();
+  const results = new Map<string, RepoStats>();
   const cacheMaxAgeSeconds =
     options.cacheMaxAgeSeconds ?? DEFAULT_CACHE_MAX_AGE_SECONDS;
   const now = Math.floor(Date.now() / 1000);
@@ -46,7 +52,10 @@ export async function fetchStarsWithCache(
     if (cacheMaxAgeSeconds > 0) {
       const cached = cache.getEntry(key);
       if (cached && now - cached.updatedAt <= cacheMaxAgeSeconds) {
-        results.set(key, cached.stars);
+        results.set(key, {
+          stars: cached.stars,
+          lastCommitAt: cached.lastCommitAt
+        });
         continue;
       }
     }
@@ -87,17 +96,17 @@ type BatchOptions = {
 };
 
 async function processBatch(
-  client: StarClient,
+  client: RepoStatsClient,
   cache: SQLiteCache,
   batch: RepoRef[],
-  results: Map<string, number>,
+  results: Map<string, RepoStats>,
   options: BatchOptions
 ): Promise<void> {
   try {
     const response = await fetchBatchWithRetry(client, batch, options);
-    for (const [key, count] of response.stars.entries()) {
-      results.set(key, count);
-      cache.set(key, count);
+    for (const [key, stats] of response.stats.entries()) {
+      results.set(key, stats);
+      cache.set(key, stats.stars, stats.lastCommitAt ?? null);
     }
 
     if (options.logRateLimit && response.rateLimit) {
@@ -111,9 +120,12 @@ async function processBatch(
     for (const repo of batch) {
       const key = repoKey(repo);
       if (!results.has(key)) {
-        const cached = cache.get(key);
-        if (cached !== null) {
-          results.set(key, cached);
+        const cached = cache.getEntry(key);
+        if (cached) {
+          results.set(key, {
+            stars: cached.stars,
+            lastCommitAt: cached.lastCommitAt
+          });
         }
       }
     }
@@ -121,16 +133,16 @@ async function processBatch(
 }
 
 async function fetchBatchWithRetry(
-  client: StarClient,
+  client: RepoStatsClient,
   batch: RepoRef[],
   options: BatchOptions
-): Promise<{ stars: Map<string, number>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }> {
+): Promise<{ stats: Map<string, RepoStats>; rateLimit?: { remaining: number; resetAt: string; cost?: number } }> {
   let attempt = 0;
   let delay = options.retryDelayMs;
 
   while (true) {
     try {
-      return await client.fetchStarsBatch(batch);
+      return await client.fetchRepoStatsBatch(batch);
     } catch (error) {
       attempt += 1;
       if (attempt > options.retries) {

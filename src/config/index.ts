@@ -11,7 +11,7 @@ import type {
 } from "./types.js";
 
 const DEFAULT_TABLE: TableConfig = {
-  columns: ["stars", "name", "description"],
+  columns: ["stars", "name", "description", "last_commit"],
   sort: "stars_desc"
 };
 

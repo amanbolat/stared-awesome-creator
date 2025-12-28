@@ -6,7 +6,7 @@ export type RepoRef = {
 };
 
 export type TableConfig = {
-  columns: ["stars", "name", "description"];
+  columns: ["stars", "name", "description", "last_commit"];
   sort: "stars_desc";
 };
 

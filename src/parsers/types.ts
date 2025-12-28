@@ -3,6 +3,7 @@ export type ParsedItem = {
   url: string;
   description: string;
   stars?: number | null;
+  lastCommitAt?: string | null;
 };
 
 export type ParsedCategory = {

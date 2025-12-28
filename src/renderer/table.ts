@@ -1,11 +1,29 @@
 import type { ParsedCategory, ParsedList } from "../parsers/types.js";
 
-const DEFAULT_ALIGN = "| ---: | --- | --- |";
+type TableColumn = "stars" | "name" | "description" | "last_commit";
 
-export function renderList(list: ParsedList): string {
+const DEFAULT_COLUMNS: TableColumn[] = ["stars", "name", "description", "last_commit"];
+const COLUMN_LABELS: Record<TableColumn, string> = {
+  stars: "Stars",
+  name: "Name",
+  description: "Description",
+  last_commit: "Last Commit"
+};
+const COLUMN_ALIGN: Record<TableColumn, string> = {
+  stars: "---:",
+  name: "---",
+  description: "---",
+  last_commit: "---"
+};
+
+export function renderList(
+  list: ParsedList,
+  options: { columns?: TableColumn[] } = {}
+): string {
   const chunks: string[] = [];
   const renderableCategories = list.categories.filter((category) => category.items.length > 0);
   const baseDepth = resolveBaseDepth(renderableCategories);
+  const columns = options.columns ?? DEFAULT_COLUMNS;
 
   if (list.header !== undefined) {
     const header = list.header.trim();
@@ -29,28 +47,28 @@ export function renderList(list: ParsedList): string {
   }
 
   for (const category of renderableCategories) {
-    chunks.push(renderCategory(category, baseDepth));
+    chunks.push(renderCategory(category, baseDepth, columns));
     chunks.push("");
   }
 
   return chunks.join("\n").trim() + "\n";
 }
 
-function renderCategory(category: ParsedCategory, baseDepth: number): string {
+function renderCategory(category: ParsedCategory, baseDepth: number, columns: TableColumn[]): string {
   const rows = category.items.map((item) => {
-    const stars = item.stars ?? "-";
-    const name = `[${escapeTableCell(item.name)}](${item.url})`;
-    const description = escapeTableCell(item.description);
-    return `| ${stars} | ${name} | ${description} |`;
+    const cells = columns.map((column) => renderCell(column, item));
+    return `| ${cells.join(" | ")} |`;
   });
   const headingLevel = resolveHeadingLevel(category.depth, baseDepth);
   const headingPrefix = "#".repeat(headingLevel);
+  const header = `| ${columns.map((column) => COLUMN_LABELS[column]).join(" | ")} |`;
+  const align = `| ${columns.map((column) => COLUMN_ALIGN[column]).join(" | ")} |`;
 
   return [
     `${headingPrefix} ${category.title}`,
     "",
-    "| Stars | Name | Description |",
-    DEFAULT_ALIGN,
+    header,
+    align,
     ...rows
   ].join("\n");
 }
@@ -72,6 +90,30 @@ function renderTableOfContents(categories: ParsedCategory[], baseDepth: number):
   });
 
   return lines.join("\n");
+}
+
+function renderCell(column: TableColumn, item: ParsedCategory["items"][number]): string {
+  switch (column) {
+    case "stars":
+      return String(item.stars ?? "-");
+    case "name":
+      return `[${escapeTableCell(item.name)}](${item.url})`;
+    case "description":
+      return escapeTableCell(item.description);
+    case "last_commit":
+      return formatCommitDate(item.lastCommitAt);
+  }
+}
+
+function formatCommitDate(value: string | null | undefined): string {
+  if (!value) {
+    return "-";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "-";
+  }
+  return parsed.toISOString().slice(0, 10);
 }
 
 function resolveBaseDepth(categories: ParsedCategory[]): number {

@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { SQLiteCache } from "../src/cache/sqlite.ts";
-import { fetchStarsWithCache } from "../src/github/stars.ts";
+import { fetchRepoStatsWithCache } from "../src/github/stars.ts";
 import { repoKey, type RepoRef } from "../src/utils/github.ts";
 
 type BatchResponse = {
-  stars: Map<string, number>;
+  stats: Map<string, { stars: number; lastCommitAt?: string | null }>;
 };
 
 class FakeGitHubClient {
@@ -20,7 +20,7 @@ class FakeGitHubClient {
     this.batches = [];
   }
 
-  fetchStarsBatch(batch: RepoRef[]): Promise<BatchResponse> {
+  fetchRepoStatsBatch(batch: RepoRef[]): Promise<BatchResponse> {
     this.calls += 1;
     this.batches.push([...batch]);
     const next = this.responses.shift();
@@ -34,7 +34,7 @@ class FakeGitHubClient {
   }
 }
 
-void test("fetchStarsWithCache retries and falls back to cache", async () => {
+void test("fetchRepoStatsWithCache retries and falls back to cache", async () => {
   const cache = new SQLiteCache(":memory:");
   const repoOne: RepoRef = { owner: "example", name: "repo-one" };
   const repoTwo: RepoRef = { owner: "example", name: "repo-two" };
@@ -45,17 +45,17 @@ void test("fetchStarsWithCache retries and falls back to cache", async () => {
   const client = new FakeGitHubClient([
     new Error("temporary failure"),
     (batch) => {
-      const stars = new Map<string, number>();
+      const stats = new Map<string, { stars: number; lastCommitAt?: string | null }>();
       const [first] = batch;
       if (!first) {
         throw new Error("Missing repo");
       }
-      stars.set(repoKey(first), 10);
-      return { stars };
+      stats.set(repoKey(first), { stars: 10, lastCommitAt: "2024-01-01T00:00:00Z" });
+      return { stats };
     }
   ]);
 
-  const result = await fetchStarsWithCache(client, cache, repos, {
+  const result = await fetchRepoStatsWithCache(client, cache, repos, {
     batchSize: 2,
     concurrency: 1,
     retries: 1,
@@ -65,12 +65,12 @@ void test("fetchStarsWithCache retries and falls back to cache", async () => {
   });
 
   assert.equal(client.calls, 2);
-  assert.equal(result.get(repoKey(repoOne)), 10);
-  assert.equal(result.get(repoKey(repoTwo)), 99);
+  assert.equal(result.get(repoKey(repoOne))?.stars, 10);
+  assert.equal(result.get(repoKey(repoTwo))?.stars, 99);
   cache.close();
 });
 
-void test("fetchStarsWithCache uses fresh cache entries", async () => {
+void test("fetchRepoStatsWithCache uses fresh cache entries", async () => {
   const cache = new SQLiteCache(":memory:");
   const repoOne: RepoRef = { owner: "example", name: "repo-one" };
   const repoTwo: RepoRef = { owner: "example", name: "repo-two" };
@@ -80,17 +80,17 @@ void test("fetchStarsWithCache uses fresh cache entries", async () => {
 
   const client = new FakeGitHubClient([
     (batch) => {
-      const stars = new Map<string, number>();
+      const stats = new Map<string, { stars: number; lastCommitAt?: string | null }>();
       const [first] = batch;
       if (!first) {
         throw new Error("Missing repo");
       }
-      stars.set(repoKey(first), 10);
-      return { stars };
+      stats.set(repoKey(first), { stars: 10, lastCommitAt: "2024-02-02T00:00:00Z" });
+      return { stats };
     }
   ]);
 
-  const result = await fetchStarsWithCache(client, cache, repos, {
+  const result = await fetchRepoStatsWithCache(client, cache, repos, {
     batchSize: 2,
     concurrency: 1,
     retries: 0,
@@ -101,7 +101,7 @@ void test("fetchStarsWithCache uses fresh cache entries", async () => {
   assert.equal(client.calls, 1);
   assert.equal(client.batches.length, 1);
   assert.equal(repoKey(client.batches[0]![0]!), repoKey(repoTwo));
-  assert.equal(result.get(repoKey(repoOne)), 123);
-  assert.equal(result.get(repoKey(repoTwo)), 10);
+  assert.equal(result.get(repoKey(repoOne))?.stars, 123);
+  assert.equal(result.get(repoKey(repoTwo))?.stars, 10);
   cache.close();
 });

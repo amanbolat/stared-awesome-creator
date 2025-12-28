@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import { graphql } from "@octokit/graphql";
 
 import type { RepoRef } from "../utils/github.js";
+import type { RepoStats } from "./stars.js";
 
 export type GitHubFileRef = {
   owner: string;
@@ -18,6 +19,11 @@ export type RateLimitInfo = {
 
 type GraphQLRepoResult = {
   stargazerCount: number;
+  defaultBranchRef?: {
+    target?: {
+      committedDate?: string;
+    } | null;
+  } | null;
 };
 
 type GraphQLRateLimit = {
@@ -103,9 +109,11 @@ export class GitHubClient {
     });
   }
 
-  async fetchStarsBatch(repos: RepoRef[]): Promise<{ stars: Map<string, number>; rateLimit?: RateLimitInfo }> {
+  async fetchRepoStatsBatch(
+    repos: RepoRef[]
+  ): Promise<{ stats: Map<string, RepoStats>; rateLimit?: RateLimitInfo }> {
     if (repos.length === 0) {
-      return { stars: new Map() };
+      return { stats: new Map() };
     }
 
     const fields = repos
@@ -113,14 +121,14 @@ export class GitHubClient {
         const alias = `repo${index}`;
         const owner = JSON.stringify(repo.owner);
         const name = JSON.stringify(repo.name);
-        return `${alias}: repository(owner: ${owner}, name: ${name}) { stargazerCount }`;
+        return `${alias}: repository(owner: ${owner}, name: ${name}) { stargazerCount defaultBranchRef { target { ... on Commit { committedDate } } } }`;
       })
       .join("\n");
 
     const query = `query {\n${fields}\nrateLimit { remaining resetAt cost }\n}`;
 
     const data = await this.graphqlWithAuth<GraphQLResponse>(query);
-    const stars = new Map<string, number>();
+    const stats = new Map<string, RepoStats>();
 
     for (const key in data) {
       if (!Object.prototype.hasOwnProperty.call(data, key)) {
@@ -138,7 +146,10 @@ export class GitHubClient {
       if (!repo) {
         continue;
       }
-      stars.set(`${repo.owner}/${repo.name}`, value.stargazerCount);
+      stats.set(`${repo.owner}/${repo.name}`, {
+        stars: value.stargazerCount,
+        lastCommitAt: extractCommitDate(value)
+      });
     }
 
     const rateLimit = data.rateLimit
@@ -149,7 +160,7 @@ export class GitHubClient {
         }
       : undefined;
 
-    return { stars, rateLimit };
+    return { stats, rateLimit };
   }
 }
 
@@ -158,4 +169,16 @@ function isNotFoundError(error: unknown): boolean {
     return false;
   }
   return "status" in error && (error as { status?: number }).status === 404;
+}
+
+function extractCommitDate(value: GraphQLRepoResult): string | null {
+  const target = value.defaultBranchRef?.target;
+  if (!target || typeof target !== "object") {
+    return null;
+  }
+  if (!("committedDate" in target)) {
+    return null;
+  }
+  const committedDate = (target as { committedDate?: string }).committedDate;
+  return committedDate ?? null;
 }

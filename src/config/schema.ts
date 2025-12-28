@@ -11,7 +11,8 @@ const tableSchema = z.object({
   columns: z.tuple([
     z.literal("stars"),
     z.literal("name"),
-    z.literal("description")
+    z.literal("description"),
+    z.literal("last_commit")
   ]),
   sort: z.literal("stars_desc")
 });

@@ -19,7 +19,7 @@ void test("renderList skips empty categories and formats tables", () => {
   });
 
   assert.ok(!output.includes("## Empty"));
-  assert.ok(output.includes("| 42 | [Repo](https://github.com/example/repo) | Useful tool |"));
+  assert.ok(output.includes("| 42 | [Repo](https://github.com/example/repo) | Useful tool | - |"));
   assert.ok(output.startsWith("# Sample"));
 });
 

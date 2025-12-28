@@ -16,14 +16,14 @@ type UpdateCall = {
 
 class FakeGitHubClient implements GitHubClientLike {
   private readonly markdown: string;
-  private readonly stars: Map<string, number>;
+  private readonly stats: Map<string, { stars: number; lastCommitAt?: string | null }>;
 
   fetchFileCalls: GitHubFileRef[] = [];
   updateFileCalls: UpdateCall[] = [];
 
-  constructor(markdown: string, stars: Map<string, number>) {
+  constructor(markdown: string, stats: Map<string, { stars: number; lastCommitAt?: string | null }>) {
     this.markdown = markdown;
-    this.stars = stars;
+    this.stats = stats;
   }
 
   fetchFile(ref: GitHubFileRef): Promise<string> {
@@ -36,16 +36,18 @@ class FakeGitHubClient implements GitHubClientLike {
     return Promise.resolve();
   }
 
-  fetchStarsBatch(repos: RepoRef[]): Promise<{ stars: Map<string, number> }> {
-    const result = new Map<string, number>();
+  fetchRepoStatsBatch(
+    repos: RepoRef[]
+  ): Promise<{ stats: Map<string, { stars: number; lastCommitAt?: string | null }> }> {
+    const result = new Map<string, { stars: number; lastCommitAt?: string | null }>();
     for (const repo of repos) {
       const key = repoKey(repo);
-      const count = this.stars.get(key);
-      if (typeof count === "number") {
-        result.set(key, count);
+      const entry = this.stats.get(key);
+      if (entry) {
+        result.set(key, entry);
       }
     }
-    return Promise.resolve({ stars: result });
+    return Promise.resolve({ stats: result });
   }
 }
 
@@ -58,12 +60,12 @@ void test("workflow fetches source README, stars, and updates destination", asyn
     "- [Repo Two](https://github.com/example/repo-two) - Second tool"
   ].join("\n");
 
-  const stars = new Map<string, number>([
-    ["example/repo-one", 10],
-    ["example/repo-two", 20]
+  const stats = new Map<string, { stars: number; lastCommitAt?: string | null }>([
+    ["example/repo-one", { stars: 10, lastCommitAt: "2024-02-02T00:00:00Z" }],
+    ["example/repo-two", { stars: 20, lastCommitAt: "2024-03-03T00:00:00Z" }]
   ]);
 
-  const client = new FakeGitHubClient(markdown, stars);
+  const client = new FakeGitHubClient(markdown, stats);
   const cache = new SQLiteCache(":memory:");
   const list: ResolvedListConfig = {
     id: "awesome-demo",
@@ -90,7 +92,7 @@ void test("workflow fetches source README, stars, and updates destination", asyn
     },
     toc: false,
     table: {
-      columns: ["stars", "name", "description"],
+      columns: ["stars", "name", "description", "last_commit"],
       sort: "stars_desc"
     }
   };
@@ -124,8 +126,12 @@ void test("workflow fetches source README, stars, and updates destination", asyn
     assert.equal(update.message, "chore: update awesome-demo stars");
     assert.ok(update.content.startsWith("# Awesome Demo"));
 
-    const repoTwoIndex = update.content.indexOf("| 20 | [Repo Two](https://github.com/example/repo-two) |");
-    const repoOneIndex = update.content.indexOf("| 10 | [Repo One](https://github.com/example/repo-one) |");
+    const repoTwoIndex = update.content.indexOf(
+      "| 20 | [Repo Two](https://github.com/example/repo-two) | Second tool | 2024-03-03 |"
+    );
+    const repoOneIndex = update.content.indexOf(
+      "| 10 | [Repo One](https://github.com/example/repo-one) | First tool | 2024-02-02 |"
+    );
     assert.ok(repoTwoIndex !== -1);
     assert.ok(repoOneIndex !== -1);
     assert.ok(repoTwoIndex < repoOneIndex);
