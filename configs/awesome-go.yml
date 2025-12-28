@@ -14,3 +14,4 @@ list:
     branch: main
   output:
     owner: amanbolat
+  parser: awesome-go

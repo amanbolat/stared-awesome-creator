@@ -54,3 +54,13 @@ void test("awesome-postgres parser captures depth-3 categories only", async () =
   assert.ok(ha);
   assert.ok(ha.items.length > 0);
 });
+
+void test("awesome-go parser ignores contents heading", async () => {
+  const registry = createParserRegistry();
+  const parser = registry.get("awesome-go");
+  const markdown = await loadFixture("awesome-go.md");
+  const parsed = parser.parse(markdown, {});
+
+  assert.ok(!parsed.categories.some((cat) => cat.title.toLowerCase() === "contents"));
+  assert.ok(parsed.categories.some((cat) => cat.title === "Actor Model"));
+});

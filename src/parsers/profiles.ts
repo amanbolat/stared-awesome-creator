@@ -1,6 +1,10 @@
 import { defaultParser } from "./default.js";
 import type { Parser, ParserOptions } from "./types.js";
 
+export const awesomeGoParser = createProfileParser("awesome-go", {
+  ignoreHeadings: ["Contents"]
+});
+
 export const awesomeRustParser = createProfileParser("awesome-rust", {
   headingDepths: [2, 3],
   ignoreHeadings: ["Table of contents"]
